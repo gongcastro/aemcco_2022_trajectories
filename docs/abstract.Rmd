@@ -1,0 +1,25 @@
+---
+title: "Estimando curvas de adquisición léxica en la infancia mediante un modelo de bayesiano
+  de TRI"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+ 
+```{r prepare, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+library(arrow)
+library(dplyr)
+library(here)
+
+participants <- read_ipc_stream(here("data", "participants.parquet"))
+
+n_participants <- participants %>% 
+    distinct(id) %>% 
+    nrow()
+```
+
+El periodo entre los 12 y los 30 meses es la etapa de la vida de una persona en la que su vocabulario aumenta de tamaño más rápidamente: los bebés de estas edades pasan de conocer 15 palabras a conocer más de 600. No todas las palabras que se adquieren en este periodo se aprenden con la misma facilidad. Esta variabilidad resulta de la interacción entre las características de la propia palabra (ej., frecuencia léxica) y las características de la persona (e.j., edad, perfil lingüístico). En este estudio desarrollamos un modelo que permite estimar la edad de adquisición de una palabra cuantificando el tamaño de efecto varios predictores de interés, con el objetivo conocer mejor los procesos que subyacen a la adquisición de vocabulario en edades tempranas. Hemos recogido datos de vocabulario de `r n_participants` niños/as de entre 10 y 34 meses edad residentes en el Area Metropolitana de Barcelona. Este cuestionario (MultiLex) consiste en un inventario de ~400 palabras en catalán y castellano en el que se pregunta a las personas a cargo de los participantes si creen que éste comprende y/o dice cada una de las palabras incluidas. Hemos usado la Teoría de Respuesta al Ítem (TRI) para modelar las curvas de comprensión y producción de cada palabra a través de la edad de los participantes. Para ello, hemos construido un modelo bayesiano multinivel de regresión logística ordinal (categorías *No comprende ni dice*, *Comprende* y *Comprende y dice*), con la edad como variable de habilidad y una serie de predictores de interés relacionados con las propiedades palabra y del participante que generan cada respuesta. En esta comunicación presentamos la estimación del modelo e incertidumbre asociada de la edad de adquisición de cada palabra incluida en el cuestionario mediante una aplicación de libre acceso, además de una explicación sobre las propiedades del modelo de TRI empleado. 
+
