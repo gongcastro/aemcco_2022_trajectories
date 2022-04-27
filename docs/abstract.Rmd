@@ -2,13 +2,13 @@
 title: "Estimando curvas de adquisición léxica en la infancia mediante un modelo de bayesiano
   de TRI"
 output: pdf_document
+author: "Gonzalo Garcia-Castro, Alicia Franco-Martínez, Cristina Rodríguez-Prada, Ignacio Castillejo, Nuria Sebastian-Galles"
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
- 
 ```{r prepare, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
 library(arrow)
 library(dplyr)
@@ -21,5 +21,5 @@ n_participants <- participants %>%
     nrow()
 ```
 
-El periodo entre los 12 y los 30 meses es la etapa de la vida de una persona en la que su vocabulario aumenta de tamaño más rápidamente: los bebés de estas edades pasan de conocer 15 palabras a conocer más de 600. No todas las palabras que se adquieren en este periodo se aprenden con la misma facilidad. Esta variabilidad resulta de la interacción entre las características de la propia palabra (ej., frecuencia léxica) y las características de la persona (e.j., edad, perfil lingüístico). En este estudio desarrollamos un modelo que permite estimar la edad de adquisición de una palabra cuantificando el tamaño de efecto varios predictores de interés, con el objetivo conocer mejor los procesos que subyacen a la adquisición de vocabulario en edades tempranas. Hemos recogido datos de vocabulario de `r n_participants` niños/as de entre 10 y 34 meses edad residentes en el Area Metropolitana de Barcelona. Este cuestionario (MultiLex) consiste en un inventario de ~400 palabras en catalán y castellano en el que se pregunta a las personas a cargo de los participantes si creen que éste comprende y/o dice cada una de las palabras incluidas. Hemos usado la Teoría de Respuesta al Ítem (TRI) para modelar las curvas de comprensión y producción de cada palabra a través de la edad de los participantes. Para ello, hemos construido un modelo bayesiano multinivel de regresión logística ordinal (categorías *No comprende ni dice*, *Comprende* y *Comprende y dice*), con la edad como variable de habilidad y una serie de predictores de interés relacionados con las propiedades palabra y del participante que generan cada respuesta. En esta comunicación presentamos la estimación del modelo e incertidumbre asociada de la edad de adquisición de cada palabra incluida en el cuestionario mediante una aplicación de libre acceso, además de una explicación sobre las propiedades del modelo de TRI empleado. 
+El segundo año de vida es la etapa de la vida de una persona en la que su vocabulario aumenta más rápidamente: los bebés de estas edades pasan de conocer 15 palabras a conocer más de 400. No todas las palabras que se adquieren en este periodo se aprenden con la misma facilidad. Esta variabilidad resulta de la interacción entre las características de la propia palabra (ej., frecuencia léxica) y las características de la persona y su entorno (e.j., edad, perfil lingüístico). Existe un gran interés en desarrollar una metodología con la que estimar la edad de adquisición de una palabra en función de estas características. El objetivo de este estudio es modelar el proceso de adquisición de vocabulario en edades tempranas, concretamente en el contexto del bilingüismo catalán-castellano. Hemos recogido datos de vocabulario de `r n_participants` niños/as de entre 10 y 34 meses edad residentes en el Area Metropolitana de Barcelona. Este cuestionario (MultiLex) consiste en un inventario de \~400 palabras en catalán y castellano en el que las personas cuidadoras respondieron si su niño/a "No comprende ni dice, "Comprende" o "Comprende y dice" cada palabra. Hemos aplicado una extensión de la Teoría de Respuesta al Ítem (específicamente un modelo bayesiano multinivel de regresión logística ordinal) para modelar las curvas de comprensión y producción de cada palabra a través de la edad de los participantes.  Además, el modelo incluye predictores sobre las propiedades de las palabras y las personas que responden que pueden servir de ejemplo práctico para otros contextos aplicados. En esta comunicación presentamos la estimación del modelo, así como la edad de adquisición de cada palabra, mediante una aplicación Shiny interactiva de libre acceso.
 
