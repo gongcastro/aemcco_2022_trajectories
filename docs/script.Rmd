@@ -1,0 +1,49 @@
+---
+title: "script"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introducción
+
+## Desarrollo léxico
+
+* Uno de los hitos más importantes en el desarrollo de un bebé es el aprendizaje de palabras.
+* La adquisición del lenguaje comienza muy temprano, incluso dentro del útero. Antes de que un bebé comience a aprender palabras, ya ha completado con éxito muchas tareas evolutivas relativas a su familiarización con las lenguas que escuchan.
+* Existe debate sobre qué es una palabra y sobre qué significa aprenderla, pero en el contexto de este estudio lo definiremos como una asociación estable, sensible y específica entre un conjunto de fonemas y un evento u objeto.
+* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
+* Aun así, el tamaño del vocabulario de un bebé es muy reducido hasta los 15 meses, cuando la gran mayoría conocen poco menos de 15 palabras
+* A los 18 meses, los bebés comienzan a adquirir palabras a un ritmo mucho mayor: a los 24 meses ya conocen cerca de 400 palabras. A partir de los 30 meses (2.5 años) el ritmo de adquisición de palabras crece a un ritmo más estable hasta la adultez.
+
+## Cómo se mide
+
+* El método más utilizado para evaluar el vocabulario de niños entre los 8 y los 30 meses en el Inventario de Desarrollo Comunicativo (*Mcarthur-Bates Communicative Development Inventory*, *CDI*). 
+* Una de las secciones del CDI consiste en una lista de palabras. Las personas a cargo del bebé deben marcar, para cada palabra, si creen que el bebé la comprende (8-15 meses) o la produce (16-30 meses).
+* A partir de las respuestas a estos ítems se extrae una puntuación que resulta de sumar el número de palabras que el bebé conoce o produce según la persona que responde al cuestionario. Esta puntuación se interpreta como una medida del tamaño del vocabulario del bebé y es un buen predictor del estado general de  su desarrollo comunicativo.
+* Este cuestionario ha sido adaptado a muchas lenguas y poblaciones. Wordbank es una base de datos que recoje miles de respuestas a adaptaciones de este cuestionario en todo el mundo. Esta base de datos es una fuente de información muy útil para conocer similitudes y divergencias en la trayectoria evolutiva de adquisición del lenguaje en población infantil en muchas partes del mundo.
+
+## Bilingüismo y desarrollo léxico
+
+* Existen pocas adaptaciones del CDI a población bilingüe (bebés que aprenden más de una lengua durante sus primeros dos años de vida). Muchas de estas "adaptaciones" consisten en administrar el CDI de cada lengua que aprende el bebé.
+* 
+
+## Hipótesis
+
+
+
+# Métodos
+
+## Modelo
+
+## Distribución previa
+
+## Distribución posterior
+
+## Portal
+
+
+# Discusión
+

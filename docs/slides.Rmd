@@ -1,0 +1,985 @@
+---
+title: "Estimando curvas de adquisición léxica en la infancia"
+subtitle: "Un modelo de bayesiano de TRI"
+author: "Gonzalo Garcia-Castro<sup>1</sup>, Alicia Franco-Martínez<sup>2</sup>, Cristina Rodríguez-Prada<sup>2</sup>, Ignacio Castillejo<sup>2</sup>, Núria Sebastian-Galles<sup>1</sup>"
+institute: "<sup>1</sup>Universitat Pompeu Fabra, <sup>2</sup>Universidad Autónoma de Madrid"
+date: "21/07/2022"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+---
+
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+
+# load packages
+library(arrow)
+library(here)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(tidybayes)
+library(ggplot2)
+library(ggsci)
+library(patchwork)
+library(scales)
+library(ggrepel)
+
+# load helper functions
+source(here("R", "utils.R"))
+
+# set ggplot2 theme
+theme_set(theme_custom())
+
+# load datasets
+participants <- read_ipc_stream(here("data", "participants.parquet"))
+items <- read_ipc_stream(here("data", "items.parquet"))
+model_fit_4 <- readRDS(here("results", "fit_4.rds"))
+post <- read_ipc_stream(here("results", "posterior_draws.parquet"))
+rhats <- read_ipc_stream(here("results", "rhats.parquet"))
+neffs <- read_ipc_stream(here("results", "neffs.parquet"))
+fix_coefs <- read_ipc_stream(here("results", "fixed_coefs.parquet"))
+rand_coefs <- read_ipc_stream(here("results", "rand_coefs.parquet"))
+preds_freq <- read_ipc_stream(here("results", "posterior_predictions-frequency.parquet"))
+preds_n_phon <- read_ipc_stream(here("results", "posterior_predictions-n_phon.parquet"))
+preds_doe <- read_ipc_stream(here("results", "posterior_predictions-doe.parquet"))
+
+```
+
+---
+class: center
+
+# Primeras palabras
+
+---
+class: center
+
+# Instrumentos de medida
+
+---
+class: center
+
+# Cuestionario
+
+---
+class:
+
+# Participantes
+
+* `r length(unique(participants$id))` participantes, `r format(nrow(participants), big.mark = ",")` respuestas
+* Residentes en el área Metropolitana de Barcelona
+
+
+
+---
+class: center
+
+# Base de datos
+
+
+```{r participants-plot, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, fig.width=9, fig.height=7, dpi=1000, out.width="90%"}
+
+plot_age <- participants %>% 
+    mutate(age = floor(age)) %>% 
+    count(lp, age) %>% 
+    ggplot() +
+    aes(
+        x = age,
+        y = n,
+        fill = lp,
+        colour = lp
+    ) +
+    geom_col() +
+    labs(
+        x = "Edad (meses)",
+        y = "Número de respuestas",
+        colour = "Grupo",
+        fill = "Grupo"
+    ) +
+    scale_fill_d3() +
+    scale_color_d3() +
+    scale_x_continuous(
+        breaks = seq(
+            floor(min(participants$age)), 
+            floor(max(participants$age)),
+            2
+        ),
+        sec.axis = dup_axis(
+            name = "Edad (años)",
+            labels = months_to_years(
+                seq(
+                    floor(min(participants$age)), 
+                    floor(max(participants$age)),
+                    2
+                )
+            )
+        ) 
+    ) +
+    theme(
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank()
+        
+    ) 
+
+plot_doe <- participants %>% 
+    mutate(
+        dominant_language = if_else(
+            doe_catalan >= doe_spanish,
+            "Catalan",
+            "Spanish"
+        ),
+        doe_dominant = if_else(
+            dominant_language== "Catalan",
+            doe_catalan,
+            doe_spanish
+        ),
+        doe_dominant = cut(
+            doe_dominant*100,
+            breaks = seq(40, 100, 10), 
+            ordered_results = TRUE, 
+            right = FALSE,
+            include.lowest = TRUE
+        ),
+        doe_dominant = gsub("([0-9.]+)", "\\1%", doe_dominant)
+    ) %>% 
+    count(lp, dominant_language, doe_dominant) %>% 
+    ggplot() +
+    aes(
+        x = doe_dominant,
+        y = n,
+        fill = lp,
+        colour = lp
+    ) +
+    geom_col() +
+    labs(
+        x = "Exposición acumulada a lengua dominante",
+        y = "Número de respuestas",
+        fill = "Grupo",
+        colour = "Grupo"
+    ) +
+    scale_fill_d3() +
+    scale_color_d3() 
+
+plot_time <- participants %>% 
+    count(lp, time) %>% 
+    ggplot() +
+    aes(
+        x = as.factor(time),
+        y = n,
+        colour = lp,
+        fill = lp
+    ) +
+    geom_col() +
+    labs(
+        x = "Orden de respuesta",
+        y = "Número de respuestas",
+        colour = "Grupo",
+        fill = "Grupo"
+    ) +
+    scale_color_d3() +
+    scale_fill_d3()
+
+
+plot_age /
+    (
+        plot_doe + plot_time +
+            plot_layout(
+                ncol = 2
+            )
+    ) +
+    plot_layout(
+        guides = "collect"
+        
+    ) &
+    theme(
+        legend.position = "top"
+    )
+
+
+```
+
+---
+class: center
+
+# Modelo
+
+
+$$\begin{aligned}
+\begin{split}
+
+\nu_{ij} = &\beta_1\mathrm{Edad}_{i} + \beta_2\mathrm{Dominancia}_{ij} + \beta_3 \mathrm{Edad}_{i} \cdot \mathrm{Dominancia}_{ij} +  \\
+
+&\theta_{0j}^{(\mathrm{Ítem})} + \theta_{1j}^{(\mathrm{Ítem})}\mathrm{Edad}_{j} + \theta_{2j}^{(\mathrm{Ítem})} \mathrm{Dominancia}_{ij} + \theta_{3j}^{(\mathrm{Ítem})}\mathrm{Edad}_{j} \cdot \mathrm{Dominancia}_{ij} + \\
+
+&\theta_{0j}^{(\mathrm{ID})} + \theta_{1j}^{(\mathrm{ID})}\mathrm{Edad}_{j} + \theta_{2j}^{(\mathrm{ID})}\mathrm{Dominancia}_{ij} + \theta_{3j}^{(\mathrm{ID})} \mathrm{Edad}_{j} \cdot \mathrm{Dominancia}_{ij}
+
+\end{split}
+\end{aligned}$$
+
+
+$$\begin{aligned}
+g[\mathrm{Pr}(y_{ij} \le a_s)] = \tau_s - \nu_{ij}
+\end{aligned}$$
+
+---
+class: center
+
+## Estructura
+
+---
+class: center
+
+---
+class: center
+
+## Distribución previa
+
+---
+class: center
+
+## Diagnósticos
+
+---
+class: center
+
+## Distribución posterior
+
+```{r fixed-coefs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+fix_coefs %>% 
+    ggplot() +
+    aes(
+        x = .value,
+        y = reorder(.variable, desc(.variable))
+    ) +
+    geom_vline(
+        xintercept = 0,
+        linetype = "dotted"
+    ) +
+    stat_slab(
+        aes(
+            fill = stat(cut_cdf_qi(cdf, labels = percent))
+        ),
+        colour = "white"
+    ) +
+    stat_pointinterval(
+        colour = "black"
+    ) +
+    scale_fill_brewer(
+        palette = "Greys",
+        direction = -1, 
+        na.value = "gray90"
+    ) +
+    labs(
+        x = "Sampling space",
+        y = "Posterior likelihood density",
+        fill = "Credible Interval"
+    ) +
+    scale_x_continuous(
+        limits = c(-0.2, 1),
+        labels = percent
+    ) +
+    theme(
+        legend.position = "top",
+        panel.grid.major.y = element_line(colour = "grey")
+    )
+
+```
+
+---
+class: center
+
+## Predicciones posteriores
+
+```{r posterior-preds, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", dpi=2000, }
+
+# empirical response cumulative probabilities
+aoas <- get_aoa(preds, .category, doe_std) %>% 
+    mutate(doe_std = paste0(doe_std, " SD")) 
+
+write_ipc_stream(aoas, here("results", "posterior_aoas-population.parquet"))
+
+observations <- df %>% 
+    mutate(
+        doe_std = cut(
+            doe_std,
+            c(-1, -0.5, 0.5, 1.5),
+            labels = c("-1 SD", "0 SD", "1 SD")
+        ),
+        age_std = cut(
+            age_std,
+            breaks = unique(preds$age_std),
+            labels = unique(preds$age_std)[-1]
+        ) %>% 
+            as.character() %>% 
+            as.numeric()
+    ) %>% 
+    drop_na(doe_std) %>% 
+    group_by(doe_std, age_std) %>% 
+    summarise(
+        yes_Production = sum(response=="Understands and Says"),
+        yes_Comprehension = sum(response %in% c("Understands", "Understands and Says")),
+        n = n(),
+        .groups = "drop"
+    ) %>% 
+    pivot_longer(
+        starts_with("yes"),
+        names_to = ".category",
+        values_to = "sum",
+        names_prefix = "yes_"
+    ) %>% 
+    mutate(
+        prop = prop_adj(sum, n),
+        prop_se = prop_adj_se(sum, n)
+    ) %>% 
+    # group_by(age_std, doe_std, .category) %>% 
+    # summarise(
+    #     prop = mean(prop),
+    #     n = n(),
+    #     .groups = "drop"
+    # ) %>% 
+    mutate(
+        age = rescale_variable(
+            age_std, 
+            mean = mean(df$age), 
+            sd = sd(df$age)
+        ) 
+    )
+
+
+plot_curves <- preds %>%  
+    mutate(doe_std = paste0(doe_std, " SD")) %>% 
+    ggplot() +
+    aes(
+        x = age,
+        y = .epred,
+        colour = doe_std,
+        fill = doe_std,
+        shape = .category,
+        linetype = .category,
+        group = interaction(doe_std, .category)
+    ) +
+    # linea de referencia (50% suele ser considerado el punto de adquisición)
+    geom_hline(
+        yintercept = 0.5,
+        colour = "grey",
+        alpha = 1
+    ) +
+    # posterior predictions for each individual posterior draw
+    stat_summary(
+        fun.data = mean_qi,
+        geom = "ribbon",
+        colour = NA,
+        alpha = 0.5
+    ) +
+    # geom_line(
+    #     aes(group = interaction(.draw, doe_std, .category , sep = " / ")),
+    #     alpha = 0.1,
+    #     size = 0.5,
+    #     linetype = "solid"
+    # ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size  = 1
+    ) +
+    # geom_point(
+    #     data = observations,
+    #     aes(y = prop),
+    #     size = 2,
+    #     alpha = 0.5
+    # ) +
+    # geom_line(
+    #     data = observations,
+    #     aes(y = prop, group = interaction(.category, doe_std)),
+    #     size = 0.5,
+    #     alpha = 0.5
+    # ) +
+    labs(
+        x = "Age (months)",
+        y = "P(acquisition | age, dominance)",
+        colour = "Language exposure",
+        fill = "Language exposure",
+        shape = "Response",
+        linetype = "Response",
+        title = "Acquisition curves",
+        subtitle = "Each line corresponds to a posterior prediction"
+    ) +
+    scale_color_d3() +
+    scale_fill_d3() +
+    scale_y_continuous(
+        labels = percent
+    ) +
+    scale_x_continuous(
+        breaks = seq(0, 45, 5)
+    ) +
+    theme(
+        legend.position = "bottom",
+        panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
+        axis.text.x.top = element_text(),
+        axis.title.x.top = element_text(colour = "top"),
+        axis.ticks.x.top = element_line(),
+        axis.title.x.bottom = element_blank(),
+        axis.text.x.bottom = element_blank(),
+        axis.ticks.x.bottom = element_blank(),
+        axis.line.x = element_blank()
+    ) 
+
+plot_aoas <- aoas %>% 
+    filter(.category != "No") %>% 
+    ggplot() +
+    aes(
+        x = aoa,
+        y = 0,
+        colour = doe_std,
+        shape = .category
+    ) +
+    annotate(
+        geom = "text",
+        x = c(5, 40),
+        y = -0.1,
+        vjust = -1,
+        hjust = c(1, 0),
+        label = c("Acquired earlier", "Acquired later")
+    ) +
+    annotate(
+        geom = "segment",
+        x = c(5, 40),
+        xend = c(0, 45),
+        y = -0.1,
+        yend = -0.1,
+        arrow = arrow(angle = 30, length = unit(0.2, "cm"))
+    ) +
+    stat_pointinterval(
+        position = position_dodge(width = 0.5),
+        point_interval = mean_qi
+    ) +    
+    labs(
+        x = "Age (months)",
+        y = "Response",
+        title = "Age of acquisition",
+        shape = "Response",
+        linetype = "Response"
+    ) +
+    guides(colour = "none") +
+    scale_x_continuous(
+        limits = c(0, 45),
+        breaks = seq(0, 45, 5)
+    ) +
+    scale_color_d3() +
+    scale_fill_d3() +
+    theme(
+        legend.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+    )
+
+plot_curves + 
+    plot_aoas +
+    plot_layout(
+        ncol = 1,
+        heights = c(0.8, 0.2),
+        guides = "collect"
+    ) &
+    plot_annotation(
+        title = "Posterior predictions",
+        tag_levels = "A"
+    )
+
+ggsave(here("img", "posterior_predictions-age.png"), dpi = 1000)
+
+```
+
+---
+class:
+
+## Predicciones posteriores: frecuencia léxica
+
+```{r post-preds-freq, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+preds_freq_observed <- df %>%
+    left_join(select(items, te, item, ipa_flat)) %>% 
+    filter(
+        te %in% items$te[items$item %in% c(
+            c(
+                "spa_casa",
+                "spa_jirafa",
+                "spa_columpiar",
+                "spa_mama"
+            )
+        )]
+    ) %>% 
+    group_by(te, item, ipa_flat, freq) %>% 
+    summarise(
+        yes_Production = sum(response=="Understands and Says"),
+        yes_Comprehension = sum(response %in% c("Understands", "Understands and Says")),
+        n = n(),
+        .groups = "drop"
+    ) %>% 
+    pivot_longer(
+        starts_with("yes"),
+        names_to = ".category",
+        values_to = "sum",
+        names_prefix = "yes_"
+    ) %>% 
+    mutate(
+        prop = prop_adj(sum, n),
+        prop_se = prop_adj_se(sum, n)
+    )
+
+preds_freq %>% 
+    ggplot()+
+    aes(
+        x = freq,
+        y = .epred,
+        colour = .category
+    ) +
+    facet_wrap(~.category) +
+    geom_line(
+        aes(group = .draw),
+        alpha = 0.15
+    ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size = 3,
+        alpha = 0.75,
+        colour = "white"
+    ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size = 1
+    ) +
+    geom_line(
+        data = preds_freq_observed,
+        aes(
+            y = prop,
+            group = te
+        ),
+        size = 1,
+        colour = "grey"
+    ) +
+    geom_label_repel(
+        data = preds_freq_observed %>% 
+            group_by(.category, te, item, ipa_flat, freq) %>% 
+            summarise(
+                prop = max(prop),
+                .groups = "drop"
+            ),
+        box.padding = 1,
+        min.segment.length = 10,
+        aes(
+            y = prop, 
+            label = paste0("/", ipa_flat, "/")
+        ),
+        size = 5,
+        alpha = 0.65,
+        label.size = 0,
+        label.r = 0,
+        fill = "white"
+    ) +
+    geom_point(
+        data = preds_freq_observed,
+        aes(
+            y = prop, 
+        ),
+        size = 2
+    ) +
+    labs(
+        x = "Frequency (Zipf score)",
+        y = "P(acquisition | frequency)",
+        colour = "Category"
+    ) +
+    scale_color_d3() +
+    scale_y_continuous(
+        labels = percent,
+        limits = c(0, 1)
+    ) +
+    theme(
+        legend.position = "none",
+        legend.title = element_blank()
+    )
+
+```
+
+---
+class:
+
+## Predicciones posteriores: Número de fonemas
+
+```{r post-preds-phon, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+preds_n_phon_observed <- df %>%
+    left_join(select(items, te, item, ipa_flat)) %>% 
+    filter(
+        te %in% items$te[items$item %in% c(
+            c(
+                "spa_chapotear",
+                "spa_vaso",
+                "spa_camiseta",
+                "cat_tovalloletes"
+            )
+        )]
+    ) %>% 
+    group_by(te, item, ipa_flat, n_phon) %>% 
+    summarise(
+        yes_Production = sum(response=="Understands and Says"),
+        yes_Comprehension = sum(response %in% c("Understands", "Understands and Says")),
+        n = n(),
+        .groups = "drop"
+    ) %>% 
+    pivot_longer(
+        starts_with("yes"),
+        names_to = ".category",
+        values_to = "sum",
+        names_prefix = "yes_"
+    ) %>% 
+    mutate(
+        prop = prop_adj(sum, n),
+        prop_se = prop_adj_se(sum, n)
+    )
+
+preds_n_phon %>% 
+    ggplot()+
+    aes(
+        x = n_phon,
+        y = .epred,
+        colour = .category
+    ) +
+    facet_wrap(~.category) +
+    geom_line(
+        aes(group = .draw),
+        alpha = 0.15
+    ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size = 3,
+        alpha = 0.75,
+        colour = "white"
+    ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size = 1
+    ) +
+    geom_line(
+        data = preds_n_phon_observed,
+        aes(
+            y = prop,
+            group = te
+        ),
+        size = 1,
+        colour = "grey"
+    ) +
+    geom_label_repel(
+        data = preds_n_phon_observed %>% 
+            group_by(.category, te, item, ipa_flat, n_phon) %>% 
+            summarise(
+                prop = max(prop),
+                .groups = "drop"
+            ),
+        box.padding = 1, min.segment.length = 10,
+        aes(
+            y = prop, 
+            label = paste0("/", ipa_flat, "/")
+        ),
+        size = 5,
+        alpha = 0.65,
+        label.size = 0,
+        label.r = 0,
+        fill = "white"
+    ) +
+    geom_point(
+        data = preds_n_phon_observed,
+        aes(y = prop),
+        size = 2
+    ) +
+    labs(
+        x = "# phonemes",
+        y = "P(acquisition | # phonemes)",
+        colour = "Category"
+    ) +
+    scale_color_d3() +
+    scale_y_continuous(
+        labels = percent,
+        limits = c(0, 1)
+    ) +
+    scale_x_continuous(
+        breaks = seq(min(df$n_phon), max(df$n_phon))
+    ) +
+    theme(
+        legend.position = "none",
+        legend.title = element_blank()
+    )
+
+```
+
+---
+class:
+
+## Posterior predictions: exposición a la lengua
+
+
+```{r post-preds-doe, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+preds_doe_observed <- df %>%
+    left_join(select(items, te, item, ipa_flat)) %>% 
+    filter(
+        te %in% items$te[items$item %in% c(
+            c(
+                "cat_got"
+            )
+        )]
+    ) %>% 
+    group_by(te, item, ipa_flat, doe) %>% 
+    summarise(
+        yes_Production = sum(response=="Understands and Says"),
+        yes_Comprehension = sum(response %in% c("Understands", "Understands and Says")),
+        n = n(),
+        .groups = "drop"
+    ) %>% 
+    pivot_longer(
+        starts_with("yes"),
+        names_to = ".category",
+        values_to = "sum",
+        names_prefix = "yes_"
+    ) %>% 
+    mutate(
+        prop = prop_adj(sum, n),
+        prop_se = prop_adj_se(sum, n)
+    )
+
+preds_n_doe %>% 
+    ggplot()+
+    aes(
+        x = doe,
+        y = .epred,
+        colour = .category
+    ) +
+    facet_wrap(~.category) +
+    geom_line(
+        aes(group = .draw),
+        alpha = 0.15
+    ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size = 3,
+        alpha = 0.75,
+        colour = "white"
+    ) +
+    stat_summary(
+        fun = mean,
+        geom = "line",
+        size = 1
+    ) +
+    geom_line(
+        data = preds_doe_observed,
+        aes(
+            y = prop,
+            group = item,
+            linetype = item
+        ),
+        size = 0.75
+    ) +
+    geom_label_repel(
+        data = preds_doe_observed %>%
+            filter(doe==doe[which.min(0.7-doe)]) %>% 
+            group_by(.category, te, item, ipa_flat, doe) %>% 
+            summarise(
+                prop = max(prop),
+                .groups = "drop"
+            ),
+        box.padding = 1,
+        min.segment.length = 10,
+        aes(
+            y = prop, 
+            label = paste0("/", ipa_flat, "/")
+        ),
+        size = 5,
+        alpha = 0.65,
+        label.size = 0,
+        label.r = 0,
+        fill = "white"
+    ) +
+    labs(
+        x = "Laguage exposure",
+        y = "P(acquisition | % language exposre)",
+        colour = "Category"
+    ) +
+    scale_color_d3() +
+    scale_y_continuous(
+        labels = percent,
+        limits = c(0, 1)
+    ) +
+    scale_x_continuous(
+        breaks = seq(min(df$doe), max(df$doe), 0.1),
+        labels = percent
+    ) +
+    theme(
+        legend.position = "none",
+        legend.title = element_blank(),
+        panel.grid.minor = element_blank()
+    )
+
+```
+
+
+---
+class: center
+
+# Conclusiones
+
+---
+class: center
+
+# Anexo 1: convergencia de cadenas
+
+```{r chain-convergence, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+post %>% 
+    mutate(
+        .variable_name = str_replace_all(
+            .variable,
+            c(
+                "b_" = "\u03b2: ",
+                "sd_te__" = paste0("TE \u03c3: "),
+                "sd_id__" = paste0("ID \u03c3: "),
+                "cor_te__" = paste0("TE \u03c1: "),
+                "cor_id__" = paste0("ID \u03c1: "),
+                "__" = " \u00d7 "
+            )
+            
+        )
+    ) %>% 
+    ggplot() +
+    aes(
+        x = .iteration,
+        y = .value,
+        colour = .chain
+    ) +
+    facet_wrap(
+        ~.variable_name,
+        scales = "free_y"
+    ) + 
+    geom_line() +
+    labs(
+        x = "Iteration",
+        y = "Value",
+        colour = "Chain"
+    ) +
+    scale_color_d3()  +
+    scale_x_continuous(
+        labels = function(x) format(x, big.mark = ",")
+    ) +
+    theme(
+        legend.position = "top",
+        panel.grid = element_blank(),
+        axis.title.y = element_blank(),
+        strip.text = element_text(size = 8),
+        axis.text = element_text(size = 6)
+    )
+
+```
+
+---
+
+# Anexo 2: convergencia de cadenas (R-hat)
+
+```{r diagnostics-rhats, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+rhats %>% 
+    ggplot() +
+    aes(
+        x = .rhat
+    ) +
+    # geom_vline(xintercept = 1.1, colour = "grey") +
+    geom_histogram(
+        fill = pal_d3()(3)[1],
+        colour = "white"
+    ) +
+    scale_y_continuous(
+        labels = function(x) format(x, big.mark = ",")
+    ) +
+    labs(
+        title = "Chain convergence",
+        subtitle = "Values should not be larger than 1.1",
+        x = "Gelman-Rubin statistic (R-hat)",
+        y = "Number of samples"
+    ) 
+```
+
+---
+
+# Anexo 3: tamaño de muestra efectivo
+
+```{r diagnostics-neff, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+neffs %>% 
+    ggplot() +
+    aes(
+        x = .neff
+    ) +
+    geom_histogram(
+        fill = pal_d3()(1)[1],
+        colour = "white"
+    ) +
+    labs(
+        title = "Effective sample size",
+        subtitle = "Overall, values should be larger than 1",
+        x = "Effective sample size ratio (N eff.)",
+        y = "Number of samples"
+    ) +
+    scale_y_continuous(
+        labels = function(x) format(x, big.mark = ",")
+    ) +
+    theme(
+        axis.title.y = element_blank()
+    ) 
+```
+
+---
+
+# Anexo 4: variabilidad de coeficientes
+
+```{r rand-coefs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+rand_coefs %>% 
+    ggplot() +
+    aes(
+        x = .value,
+        y = reorder(.variable, desc(.variable)),
+        colour = group
+    ) +
+    stat_pointinterval(
+        point_size = 2,
+        position = position_dodge(width = 0.21)
+        
+    ) +
+    scale_color_d3() +
+    labs(
+        x = "Sampling space",
+        y = "Posterior likelihood density",
+        colour = "Group"
+    ) +
+    scale_x_continuous(
+        limits = c(0.5, 0.9),
+        labels = percent
+    ) +
+    theme(
+        legend.position = "top",
+        panel.grid.major.y = element_blank()
+        
+    )
+
+```
+
+
