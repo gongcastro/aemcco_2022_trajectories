@@ -1,6 +1,6 @@
 ---
 title: "Estimando curvas de adquisición léxica en la infancia"
-author: Gonzalo Garcia-Castro, Alicia Franco-Martínez, Cristina Rodríguez-Prada, Núria
+author: Gonzalo Garcia-Castro, Alicia Franco-Martínez, Cristina Rodríguez-Prada, Ignacio Castillejo, Núria
   Sebastian-Galles
 date: '2022-07-14'
 output:
