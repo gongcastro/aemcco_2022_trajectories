@@ -32,6 +32,7 @@ library(stringr)
 library(ggplot2)
 library(ggsci)
 library(patchwork)
+library(brms)
 library(gt)
 library(scales)
 library(ggrepel)
@@ -50,12 +51,13 @@ participants <- read_ipc_stream(here("data", "participants.parquet"))
 items <- read_ipc_stream(here("data", "items.parquet"))
 df <- read_ipc_stream(here("data", "main.parquet"))
 model_fit_4 <- readRDS(here("results", "fit_4.rds"))
+model_fit_4_prior <- readRDS(here("results", "fit_4_prior.rds"))
 post <- read_ipc_stream(here("results", "posterior_draws.parquet"))
 rhats <- read_ipc_stream(here("results", "rhats.parquet"))
 neffs <- read_ipc_stream(here("results", "neffs.parquet"))
 fix_coefs <- read_ipc_stream(here("results", "fixed_coefs.parquet"))
 rand_coefs <- read_ipc_stream(here("results", "rand_coefs.parquet"))
-preds <- read_ipc_stream(here("results", "posterior_predictions-population.parquet"))
+preds_age <- read_ipc_stream(here("results", "posterior_predictions-population.parquet"))
 preds_freq <- read_ipc_stream(here("results", "posterior_predictions-frequency.parquet"))
 preds_n_phon <- read_ipc_stream(here("results", "posterior_predictions-n_phon.parquet"))
 preds_doe <- read_ipc_stream(here("results", "posterior_predictions-doe.parquet"))
@@ -67,12 +69,33 @@ El objetivo de este estudio es estimar la edad de adquisición de palabras en ca
 
 
 
-# Primeras palabras
+# Introducción
+
+## Desarrollo léxico
+
+* Uno de los hitos más importantes en el desarrollo de un bebé es el aprendizaje de palabras.
+* La adquisición del lenguaje comienza muy temprano, incluso dentro del útero. Antes de que un bebé comience a aprender palabras, ya ha completado con éxito muchas tareas evolutivas relativas a su familiarización con las lenguas que escuchan.
+* Existe debate sobre qué es una palabra y sobre qué significa aprenderla, pero en el contexto de este estudio lo definiremos como una asociación estable, sensible y específica entre un conjunto de fonemas y un evento u objeto.
+* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
+* Aun así, el tamaño del vocabulario de un bebé es muy reducido hasta los 15 meses, cuando la gran mayoría conocen poco menos de 15 palabras
+* A los 18 meses, los bebés comienzan a adquirir palabras a un ritmo mucho mayor: a los 24 meses ya conocen cerca de 400 palabras. A partir de los 30 meses (2.5 años) el ritmo de adquisición de palabras crece a un ritmo más estable hasta la adultez.
+
+## Cómo se mide
+
+* El método más utilizado para evaluar el vocabulario de niños entre los 8 y los 30 meses en el Inventario de Desarrollo Comunicativo (*Mcarthur-Bates Communicative Development Inventory*, *CDI*). 
+* Una de las secciones del CDI consiste en una lista de palabras. Las personas a cargo del bebé deben marcar, para cada palabra, si creen que el bebé la comprende (8-15 meses) o la produce (16-30 meses).
+* A partir de las respuestas a estos ítems se extrae una puntuación que resulta de sumar el número de palabras que el bebé conoce o produce según la persona que responde al cuestionario. Esta puntuación se interpreta como una medida del tamaño del vocabulario del bebé y es un buen predictor del estado general de  su desarrollo comunicativo.
+* Este cuestionario ha sido adaptado a muchas lenguas y poblaciones. Wordbank es una base de datos que recoje miles de respuestas a adaptaciones de este cuestionario en todo el mundo. Esta base de datos es una fuente de información muy útil para conocer similitudes y divergencias en la trayectoria evolutiva de adquisición del lenguaje en población infantil en muchas partes del mundo.
+
+## Bilingüismo y desarrollo léxico
+
+* Existen pocas adaptaciones del CDI a población bilingüe (bebés que aprenden más de una lengua durante sus primeros dos años de vida). Muchas de estas "adaptaciones" consisten en administrar el CDI de cada lengua que aprende el bebé.
+* 
+
+# Métodos
 
 
----
-
-# Cuestionario
+## Cuestionario
 
 **MultiLex** es un cuestionario inspirado en el *McArthur-Bates Communicative Development Inventory* [CDI, @fenson1994variability] en el que presentamos una lista de palabras a las personas a cargo de cada participante. Les pedimos que, para cada palabra, respondan si creen que el participante *No comprende ni dice* la palabra, *Comprende* la palabra o *Comprende y dice* la palabra. Las palabras incluidas son palabras que normalmente aprenden los niños en las edades de interés, aunque varían en su frecuencia léxica (el número de veces que aparecen en el habla natural) y por tanto también en su dificultad. Estas palabras pertenecen a diversas categorías conceptuales/funcionales, como *Comida* o *Adverbios*. Para los análisis de este estudio seleccionamos únicamente palabras de contenido (sustantivos, verbos y adjetivos).
 
@@ -150,7 +173,7 @@ df %>%
 ```
 
 
-# Base de datos
+## Base de datos
 
 
 ```{r database, message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE}
@@ -311,7 +334,7 @@ plot_age /
 ---
 
 
-# Modelo
+## Modelo
 
 
 (hablar de TRI en algún momento) [@burkner2019bayesian]
@@ -332,11 +355,11 @@ Ambos niveles del modelo de regresión incluyen su propia intersección y su pro
 
 $$\begin{aligned}
 
-\nu_{ij} = &\beta_1\mathrm{Edad}_{i} + \beta_2\mathrm{Dominancia}_{ij} + \beta_3 \mathrm{Edad}_{i} \cdot \mathrm{Dominancia}_{ij} +  \\
+\nu_{ij} = &\beta_1\mathrm{Edad}_{i} + \beta_2\mathrm{Frecuencia}_{j} + \beta_3\mathrm{Fonemas}_{j} + \beta_4\mathrm{Dominancia}_{ij}+  \\
 
-&\theta_{0j}^{(\mathrm{Ítem})} + \theta_{1j}^{(\mathrm{Ítem})}\mathrm{Edad}_{j} + \theta_{2j}^{(\mathrm{Ítem})} \mathrm{Dominancia}_{ij} + \theta_{3j}^{(\mathrm{Ítem})}\mathrm{Edad}_{j} \cdot \mathrm{Dominancia}_{ij} + \\
+&\theta_{0j}^{(\mathrm{TE})} + \theta_{1j}^{(\mathrm{TE})}\mathrm{Edad}_{i} +  \theta_{2j}^{(\mathrm{TE})} \mathrm{Frecuencia}_{j} +   \theta_{3j}^{(\mathrm{TE})} \mathrm{Fonemas}_{j} +  \theta_{2j}^{(\mathrm{TE})} \mathrm{Dominancia}_{ij} + \\
 
-&\theta_{0j}^{(\mathrm{ID})} + \theta_{1j}^{(\mathrm{ID})}\mathrm{Edad}_{j} + \theta_{2j}^{(\mathrm{ID})}\mathrm{Dominancia}_{ij} + \theta_{3j}^{(\mathrm{ID})} \mathrm{Edad}_{j} \cdot \mathrm{Dominancia}_{ij}
+&\theta_{0j}^{(\mathrm{ID})} + \theta_{1j}^{(\mathrm{ID})}\mathrm{Edad}_{i} +  \theta_{2j}^{(\mathrm{ID})} \mathrm{Frecuencia}_{j} +   \theta_{3j}^{(\mathrm{ID})} \mathrm{Fonemas}_{j} +  \theta_{2j}^{(\mathrm{ID})} \mathrm{Dominancia}_{ij} 
 
 \end{aligned}$$
 
@@ -348,51 +371,404 @@ g[\mathrm{Pr}(y_{ij} \le a_s)] = \tau_s - \nu_{ij}
 donde $s$ refleja la s-ésima categoría de respuesta, $a_1 < a_2 < a_3$ son categorías de respuesta ordenadas, $\mathrm{Pr}(y_i \le a_3) = 1$ y $\tau_s$ son los parámetros umbrales (thresholds) donde $\tau_1 < \tau_2 < \tau_3$.
 
 
-## Estimación del modelo
+### Estimación del modelo
 
 Para estimar los coeficientes del modelo de regresión y predecir la edad de adquisición de cada traducción hemos adoptado el enfoque bayesiano. (insertar breve descripción) [@gelman1995bayesian; @mcelreath2020statistical]
 
 Hemos usado el paquete de R brms [@burkner2017brms; @burkner2017advanced] para implementar el modelo bayesiano. Este paquete es una interfaz del lenguaje de programación probabilística Stan [@carpenter2017stan] con el entorno de programación R [@rcoreteam2021language] que implementa Montecarlo Hamiltoniano para explorar la distribución posterior del modelo de forma eficiente. La formula del modelo implementado en brms es la siguiente (ver Anexo para consultar el código de Stan):
 
 ```r
-response ~ age_std*dominance +
-(1 + age_std*dominance | id) +
-(1 + age_std*dominance | te),
+response ~ age_std + freq_std + n_phon_std + doe_std + 
+(1 + age_std + freq_std + n_phon_std + doe_std | id) +
+(1 + age_std + freq_std + n_phon_std + doe_std | te),
 family = cratio(link = "logit") # cumulative, continuation ratio
 ```
 
 
 Hemos ejecutado el modelo especificando los siguientes ajustes:
 
-* Nº de cadenas: 4
-* Nº de iteraciones en cada cadena: 2,000 (1,000 de ellas son de calentamiento)
+* Nº de cadenas: 2
+* Nº de iteraciones en cada cadena: 4,000 (2,000 de ellas son de calentamiento)
 * Parámetro $\Delta$ de adaptación: 0.80
 * Profundidad máxima del árbol: 15
 
-## Distribución previa
+### Distribución previa {.tab-pills}
 
-```r
-c(
-prior(normal(-0.25, 0.1), class = "Intercept"),
-prior(normal(1, 0.1), class = "b", coef = "age_std"),
-prior(normal(0, 0.5), class = "b", coef = "dominance1"),
-prior(normal(0, 0.5), class = "b", coef = "age_std:dominance1"),
-prior(normal(1, 0.1), class = "sd", group = "te"),
-prior(normal(1, 0.1), class = "sd", group = "id"),
-prior(lkj(2), class = "cor")
-)
+#### Tabla
+
+```{r model-prior}
+model_fit_4$prior
+
+tribble(
+    ~class, ~group, ~coef_name, ~coef, ~prior,
+    "Regression coefficients: Intercepts (\u03b20)", NA, "Intercept[1] (Comprehension)", "b_Intercept[1]", "N(-0.25, 0.1)",
+    "Regression coefficients: Intercepts (\u03b20)", NA,"Intercept[2] (Production)", "b_Intercept[2]", "N(-0.25, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Age (+1 SD)", "b_age_std", "N(1, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Frequency (+1 SD)", "b_freq_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 # Phonemes (+1 SD)", "b_n_phon_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "Exposure (+1 SD)", "b_doe_std", "N(0, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "\u03c3 Intercept", "sd_te__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "Age (+1 SD)", "sd_te__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "Frequency (+1 SD)", "sd_te__freq_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "# Phonemes (+1 SD)", "sd_te__n_phon_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "Exposure (+1 SD)", "sd_te__doe_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Intercept", "sd_te__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Age (+1 SD)", "sd_id__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Frequency (+1 SD)", "sd_id__freq_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "# Phonemes (+1 SD)", "sd_id__n_phon_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Exposure (+1 SD)", "sd_id__doe_std", "N(1, 0.1)",
+    "Correlations (\u03c1)", "TE", NA, "cor_te__*", "LkjCorr(2)",
+    "Correlations (\u03c1)", "ID", NA, "cor_id__*", "LkjCorr(2)"
+) %>% 
+    gt(groupname_col = c("class", "group")) %>% 
+    tab_style(
+        cell_text(align = "left"),
+        cells_body()
+    ) %>% 
+    cols_label(
+        class = "Class",
+        group = "Group",
+        coef_name = "Name",
+        coef = "brms",
+        prior = "Prior"
+    ) %>% 
+    tab_spanner("Parameter", c("coef_name", "coef")) %>% 
+    sub_missing(everything(), missing_text = "--") %>% 
+    tab_style(
+        cell_fill(color = "grey"),
+        cells_row_groups()
+    )
+
 ```
 
 
+#### Implentación en `brms`
 
-## Distribución previa
+```r
+model_prior <- c(
+prior(normal(-0.25, 0.1), class = "Intercept"),
+prior(normal(1, 0.1), class = "sd", group = "te"),
+prior(normal(1, 0.1), class = "sd", group = "id"),
+prior(lkj(2), class = "cor"),
+prior(normal(1, 0.1), class = "b", coef = "age_std"),
+prior(normal(0, 0.1), class = "b", coef = "freq_std"),
+prior(normal(0, 0.1), class = "b", coef = "n_phon_std"),
+prior(normal(0, 0.1), class = "b", coef = "doe_std")
+)
+```
 
----
+```{r model-prior-brms, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", fig.height=7, fig.width=9}
+model_fit_4 %>% 
+    gather_draws(`b_.*`, `sd_.*`, regex = TRUE) %>% 
+    mutate(
+        group = case_when(
+            str_detect(.variable, "b_") ~ "Population effect (\u03b2)",
+            str_detect(.variable, "sd_") & str_detect(.variable, "_te_") ~ "Standard deviation (\u03c3): TE",
+            str_detect(.variable, "sd_") & str_detect(.variable, "_id_") ~ "Standard deviation (\u03c3): ID"
+        ),
+        .variable = factor(
+            .variable,
+            levels = c(
+                "b_Intercept[1]",
+                "b_Intercept[2]",
+                "b_age_std",
+                "b_freq_std",
+                "b_n_phon_std",
+                "b_doe_std",
+                "sd_te__Intercept",
+                "sd_te__age_std",
+                "sd_te__freq_std",
+                "sd_te__n_phon_std",
+                "sd_te__doe_std",
+                "sd_id__Intercept",
+                "sd_id__age_std",
+                "sd_id__freq_std",
+                "sd_id__n_phon_std",
+                "sd_id__doe_std"
+            ),
+            labels = c(
+                "Intercept[1] (Comprehension)",
+                "Intercept[2] (Production)",
+                "Age (+1 SD)",
+                "Frequency (+1 SD)",
+                "# Phonemes (+1 SD)",
+                "Exposure (+1 SD)",
+                "Intercept",
+                "Age (+1 SD) ",
+                "Frequency (+1 SD)",
+                "# Phonemes (+1 SD)",
+                "Exposure (+1 SD)",
+                "Intercept",
+                "Age (+1 SD)",
+                "Frequency (+1 SD)",
+                "# Phonemes (+1 SD)",
+                "Exposure (+1 SD)"
+            ),
+            ordered = TRUE
+        ),
+        .chain = as.factor(.chain),
+        .value = ifelse(str_detect(.variable, "Intercept"), inv_logit_scaled(.value), .value/4)
+    ) %>% 
+    ggplot() +
+    aes(
+        x = .value,
+        y = reorder(.variable, desc(.variable))
+    ) +
+    facet_wrap(
+        ~group,
+        scales = "free_x"
+    ) +
+    geom_vline(
+        xintercept = 0,
+        linetype = "dotted"
+    ) +
+    stat_pointinterval(
+        colour = "black",
+        point_size = 1
+    ) +
+    scale_fill_manual(
+        values = c(pal_d3()(1)[1], "#57a9e2", "#aed6f1")
+    ) +
+    labs(
+        x = "Sampling space",
+        y = "Posterior likelihood density",
+        fill = "Credible Interval"
+    ) +
+    scale_x_continuous(
+        labels = percent
+    ) +
+    theme(
+        legend.position = "top",
+        panel.grid.major.y = element_line(colour = "grey"),
+        panel.border = element_rect(fill = NA, colour = "black", size = 1)
+    )
+```
 
 
-## Diagnósticos
+#### {-}
 
----
+
+### Predicciones previas
+
+```{r prior-predictions, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", fig.height=7, fig.width=9, dpi=1000}
+
+df_preds <- expand_grid(
+    age_std = seq(-4, 4, 0.1),
+    freq_std = 0,
+    n_phon_std = 0,
+    doe_std = 0
+) 
+
+# expected posterior predictions 
+preds <- add_epred_draws(
+    newdata = df_preds, 
+    object = model_fit_4_prior,
+    ndraws = 25,
+    re_formula = NA
+) %>% 
+    pivot_wider(
+        names_from = .category,
+        values_from = .epred
+    ) %>% 
+    mutate(
+        Understands = Understands + `Understands and Says`
+    ) %>% 
+    pivot_longer(
+        c(No, Understands, `Understands and Says`),
+        names_to = ".category",
+        values_to = ".epred"
+    ) %>% 
+    # get curves of interest
+    filter(.category %in% c("Understands", "Understands and Says")) %>% 
+    # more informative labels
+    mutate(
+        .category = case_when(
+            .category=="Understands" ~ "Comprehension",
+            .category=="Understands and Says" ~ "Production"
+        ),
+        # see R/utils.R
+        age = rescale_variable(age_std, mean = mean(df$age), sd = sd(df$age))
+    ) 
+
+# empirical response cumulative probabilities
+aoas <- get_aoa(preds, .category) 
+
+plot_curves <- preds %>%  
+    ggplot() +
+    aes(
+        x = age,
+        y = .epred,
+        shape = .category,
+        linetype = .category,
+        group = .category
+    ) +
+    # linea de referencia (50% suele ser considerado el punto de adquisición)
+    geom_hline(
+        yintercept = 0.5,
+        colour = "grey",
+        alpha = 1
+    ) +
+    # # posterior predictions for each individual posterior draw
+    # stat_summary(
+    #     fun.data = mean_qi,
+    #     geom = "ribbon",
+    #     colour = NA,
+    #     alpha = 0.5
+    # ) +
+    geom_line(
+        aes(group = interaction(.draw, .category , sep = " / ")),
+        alpha = 0.1,
+        size = 0.5,
+        linetype = "solid"
+    ) +
+    stat_summary(
+        fun = mean,
+        aes(group = .category),
+        geom = "line",
+        size  = 1
+    ) +
+    labs(
+        x = "Age (months)",
+        y = "P(acquisition | age)",
+        shape = "Response",
+        linetype = "Response",
+        title = "Acquisition curves",
+        subtitle = "Each line corresponds to a posterior prediction"
+    ) +
+    scale_color_d3() +
+    scale_fill_d3() +
+    scale_y_continuous(
+        labels = percent
+    ) +
+    scale_x_continuous(
+        breaks = seq(0, 45, 5)
+    ) +
+    theme(
+        legend.position = "bottom",
+        panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
+        axis.text.x.top = element_text(),
+        axis.title.x.top = element_text(colour = "top"),
+        axis.ticks.x.top = element_line(),
+        axis.title.x.bottom = element_blank(),
+        axis.text.x.bottom = element_blank(),
+        axis.ticks.x.bottom = element_blank(),
+        axis.line.x = element_blank()
+    ) 
+
+plot_aoas <- aoas %>% 
+    filter(.category != "No") %>% 
+    ggplot() +
+    aes(
+        x = aoa,
+        y = 0,
+        shape = .category
+    ) +
+    annotate(
+        geom = "text",
+        x = c(5, 40),
+        y = -0.1,
+        vjust = -1,
+        hjust = c(1, 0),
+        label = c("Acquired earlier", "Acquired later")
+    ) +
+    annotate(
+        geom = "segment",
+        x = c(5, 40),
+        xend = c(0, 45),
+        y = -0.1,
+        yend = -0.1,
+        arrow = arrow(angle = 30, length = unit(0.2, "cm"))
+    ) +
+    stat_pointinterval(
+        position = position_dodge(width = 0.5),
+        point_interval = mean_qi
+    ) +    
+    labs(
+        x = "Age (months)",
+        y = "Response",
+        title = "Age of acquisition",
+        shape = "Response",
+        linetype = "Response"
+    ) +
+    guides(colour = "none") +
+    scale_x_continuous(
+        limits = c(0, 45),
+        breaks = seq(0, 45, 5)
+    ) +
+    scale_color_d3() +
+    scale_fill_d3() +
+    theme(
+        legend.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+    )
+
+plot_curves + 
+    plot_aoas +
+    plot_layout(
+        ncol = 1,
+        heights = c(0.8, 0.2),
+        guides = "collect"
+    ) &
+    plot_annotation(
+        title = "Posterior predictions",
+        tag_levels = "A"
+    ) &
+    theme(
+        legend.position = "top"
+    )
+
+
+```
+
+# Resultados {.tabset}
+
+## Distribución de respuestas
+
+```{r response-distribution, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", fig.height=7, fig.width=9}
+
+df %>% 
+    mutate(
+        age = cut(age, seq(10, 36, 2), include.lowest = TRUE),
+        doe = cut(doe, seq(0, 1, 0.25), include.lowest = TRUE)
+    ) %>% 
+    count(age, doe, response) %>% 
+    ggplot() +
+    aes(
+        age,
+        n,
+        fill = response
+    ) +
+    facet_wrap(
+        ~doe,
+        labeller = label_both
+    ) +
+    geom_col(
+        position = position_fill()
+    ) +
+    geom_hline(
+        yintercept = 0.5,
+        size = 1,
+        colour = "grey"
+    ) +
+    labs(
+        x = "Edad (meses)",
+        y = "Porcentaje de respuestas",
+        fill = "Respuesta"
+    ) +
+    scale_fill_d3() +
+    scale_y_continuous(labels = percent) +
+    scale_x_discrete(
+        guide = guide_axis(n.dodge = 2)
+    ) +
+    theme(
+        legend.position = "top"
+    )
+
+```
 
 
 ## Distribución posterior
@@ -437,12 +813,11 @@ fix_coefs %>%
 
 ```
 
----
 
 
-# Predicciones posteriores {.tabset}
+## Predicciones posteriores {.tabset}
 
-## Efectos poblacionales
+### Efectos poblacionales
 
 ```{r posterior-preds, echo=FALSE, fig.height=9, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000}
 
@@ -500,7 +875,7 @@ observations <- df %>%
     )
 
 
-plot_curves <- preds %>%  
+plot_curves <- preds_age %>%  
     mutate(doe_std = paste0(doe_std, " SD")) %>% 
     ggplot() +
     aes(
@@ -647,10 +1022,9 @@ plot_curves +
 
 ```
 
----
 
 
-## Frecuencia léxica 
+### Frecuencia léxica 
 
 ```{r post-preds-freq, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", fig.height=5, fig.width=9, dpi=1000}
 
@@ -760,10 +1134,9 @@ preds_freq %>%
 
 ```
 
----
 
 
-## Número de fonemas
+### Número de fonemas
 
 ```{r post-preds-phon, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", fig.height=5, fig.width=9, dpi=1000}
 
@@ -873,10 +1246,9 @@ preds_n_phon %>%
 
 ```
 
----
 
 
-## Exposición a la lengua
+### Exposición a la lengua
 
 
 ```{r post-preds-doe, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE, out.width="90%", fig.height=5, fig.width=9, dpi=1000}
@@ -984,13 +1356,13 @@ preds_doe %>%
 ```
 
 
-## {-}
+### {-}
 
 
 
 # Conclusiones
 
----
+
 
 # Anexos {.tabset}
 

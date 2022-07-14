@@ -24,12 +24,33 @@ El objetivo de este estudio es estimar la edad de adquisición de palabras en ca
 
 
 
-# Primeras palabras
+# Introducción
+
+## Desarrollo léxico
+
+* Uno de los hitos más importantes en el desarrollo de un bebé es el aprendizaje de palabras.
+* La adquisición del lenguaje comienza muy temprano, incluso dentro del útero. Antes de que un bebé comience a aprender palabras, ya ha completado con éxito muchas tareas evolutivas relativas a su familiarización con las lenguas que escuchan.
+* Existe debate sobre qué es una palabra y sobre qué significa aprenderla, pero en el contexto de este estudio lo definiremos como una asociación estable, sensible y específica entre un conjunto de fonemas y un evento u objeto.
+* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
+* Aun así, el tamaño del vocabulario de un bebé es muy reducido hasta los 15 meses, cuando la gran mayoría conocen poco menos de 15 palabras
+* A los 18 meses, los bebés comienzan a adquirir palabras a un ritmo mucho mayor: a los 24 meses ya conocen cerca de 400 palabras. A partir de los 30 meses (2.5 años) el ritmo de adquisición de palabras crece a un ritmo más estable hasta la adultez.
+
+## Cómo se mide
+
+* El método más utilizado para evaluar el vocabulario de niños entre los 8 y los 30 meses en el Inventario de Desarrollo Comunicativo (*Mcarthur-Bates Communicative Development Inventory*, *CDI*). 
+* Una de las secciones del CDI consiste en una lista de palabras. Las personas a cargo del bebé deben marcar, para cada palabra, si creen que el bebé la comprende (8-15 meses) o la produce (16-30 meses).
+* A partir de las respuestas a estos ítems se extrae una puntuación que resulta de sumar el número de palabras que el bebé conoce o produce según la persona que responde al cuestionario. Esta puntuación se interpreta como una medida del tamaño del vocabulario del bebé y es un buen predictor del estado general de  su desarrollo comunicativo.
+* Este cuestionario ha sido adaptado a muchas lenguas y poblaciones. Wordbank es una base de datos que recoje miles de respuestas a adaptaciones de este cuestionario en todo el mundo. Esta base de datos es una fuente de información muy útil para conocer similitudes y divergencias en la trayectoria evolutiva de adquisición del lenguaje en población infantil en muchas partes del mundo.
+
+## Bilingüismo y desarrollo léxico
+
+* Existen pocas adaptaciones del CDI a población bilingüe (bebés que aprenden más de una lengua durante sus primeros dos años de vida). Muchas de estas "adaptaciones" consisten en administrar el CDI de cada lengua que aprende el bebé.
+* 
+
+# Métodos
 
 
----
-
-# Cuestionario
+## Cuestionario
 
 **MultiLex** es un cuestionario inspirado en el *McArthur-Bates Communicative Development Inventory* [CDI, @fenson1994variability] en el que presentamos una lista de palabras a las personas a cargo de cada participante. Les pedimos que, para cada palabra, respondan si creen que el participante *No comprende ni dice* la palabra, *Comprende* la palabra o *Comprende y dice* la palabra. Las palabras incluidas son palabras que normalmente aprenden los niños en las edades de interés, aunque varían en su frecuencia léxica (el número de veces que aparecen en el habla natural) y por tanto también en su dificultad. Estas palabras pertenecen a diversas categorías conceptuales/funcionales, como *Comida* o *Adverbios*. Para los análisis de este estudio seleccionamos únicamente palabras de contenido (sustantivos, verbos y adjetivos).
 
@@ -648,7 +669,7 @@ df %>%
 ```
 
 
-# Base de datos
+## Base de datos
 
 
 
@@ -812,7 +833,7 @@ plot_age /
 ---
 
 
-# Modelo
+## Modelo
 
 
 (hablar de TRI en algún momento) [@burkner2019bayesian]
@@ -833,11 +854,11 @@ Ambos niveles del modelo de regresión incluyen su propia intersección y su pro
 
 $$\begin{aligned}
 
-\nu_{ij} = &\beta_1\mathrm{Edad}_{i} + \beta_2\mathrm{Dominancia}_{ij} + \beta_3 \mathrm{Edad}_{i} \cdot \mathrm{Dominancia}_{ij} +  \\
+\nu_{ij} = &\beta_1\mathrm{Edad}_{i} + \beta_2\mathrm{Frecuencia}_{j} + \beta_3\mathrm{Fonemas}_{j} + \beta_4\mathrm{Dominancia}_{ij}+  \\
 
-&\theta_{0j}^{(\mathrm{Ítem})} + \theta_{1j}^{(\mathrm{Ítem})}\mathrm{Edad}_{j} + \theta_{2j}^{(\mathrm{Ítem})} \mathrm{Dominancia}_{ij} + \theta_{3j}^{(\mathrm{Ítem})}\mathrm{Edad}_{j} \cdot \mathrm{Dominancia}_{ij} + \\
+&\theta_{0j}^{(\mathrm{TE})} + \theta_{1j}^{(\mathrm{TE})}\mathrm{Edad}_{i} +  \theta_{2j}^{(\mathrm{TE})} \mathrm{Frecuencia}_{j} +   \theta_{3j}^{(\mathrm{TE})} \mathrm{Fonemas}_{j} +  \theta_{2j}^{(\mathrm{TE})} \mathrm{Dominancia}_{ij} + \\
 
-&\theta_{0j}^{(\mathrm{ID})} + \theta_{1j}^{(\mathrm{ID})}\mathrm{Edad}_{j} + \theta_{2j}^{(\mathrm{ID})}\mathrm{Dominancia}_{ij} + \theta_{3j}^{(\mathrm{ID})} \mathrm{Edad}_{j} \cdot \mathrm{Dominancia}_{ij}
+&\theta_{0j}^{(\mathrm{ID})} + \theta_{1j}^{(\mathrm{ID})}\mathrm{Edad}_{i} +  \theta_{2j}^{(\mathrm{ID})} \mathrm{Frecuencia}_{j} +   \theta_{3j}^{(\mathrm{ID})} \mathrm{Fonemas}_{j} +  \theta_{2j}^{(\mathrm{ID})} \mathrm{Dominancia}_{ij} 
 
 \end{aligned}$$
 
@@ -849,70 +870,987 @@ g[\mathrm{Pr}(y_{ij} \le a_s)] = \tau_s - \nu_{ij}
 donde $s$ refleja la s-ésima categoría de respuesta, $a_1 < a_2 < a_3$ son categorías de respuesta ordenadas, $\mathrm{Pr}(y_i \le a_3) = 1$ y $\tau_s$ son los parámetros umbrales (thresholds) donde $\tau_1 < \tau_2 < \tau_3$.
 
 
-## Estimación del modelo
+### Estimación del modelo
 
 Para estimar los coeficientes del modelo de regresión y predecir la edad de adquisición de cada traducción hemos adoptado el enfoque bayesiano. (insertar breve descripción) [@gelman1995bayesian; @mcelreath2020statistical]
 
 Hemos usado el paquete de R brms [@burkner2017brms; @burkner2017advanced] para implementar el modelo bayesiano. Este paquete es una interfaz del lenguaje de programación probabilística Stan [@carpenter2017stan] con el entorno de programación R [@rcoreteam2021language] que implementa Montecarlo Hamiltoniano para explorar la distribución posterior del modelo de forma eficiente. La formula del modelo implementado en brms es la siguiente (ver Anexo para consultar el código de Stan):
 
 ```r
-response ~ age_std*dominance +
-(1 + age_std*dominance | id) +
-(1 + age_std*dominance | te),
+response ~ age_std + freq_std + n_phon_std + doe_std + 
+(1 + age_std + freq_std + n_phon_std + doe_std | id) +
+(1 + age_std + freq_std + n_phon_std + doe_std | te),
 family = cratio(link = "logit") # cumulative, continuation ratio
 ```
 
 
 Hemos ejecutado el modelo especificando los siguientes ajustes:
 
-* Nº de cadenas: 4
-* Nº de iteraciones en cada cadena: 2,000 (1,000 de ellas son de calentamiento)
+* Nº de cadenas: 2
+* Nº de iteraciones en cada cadena: 4,000 (2,000 de ellas son de calentamiento)
 * Parámetro $\Delta$ de adaptación: 0.80
 * Profundidad máxima del árbol: 15
 
-## Distribución previa
+### Distribución previa {.tab-pills}
+
+#### Tabla
+
 
 ```r
-c(
+model_fit_4$prior
+```
+
+```
+##                 prior     class       coef group resp dpar nlpar bound
+##                (flat)         b                                       
+##        normal(1, 0.1)         b    age_std                            
+##        normal(0, 0.1)         b    doe_std                            
+##        normal(0, 0.1)         b   freq_std                            
+##        normal(0, 0.1)         b n_phon_std                            
+##    normal(-0.25, 0.1) Intercept                                       
+##    normal(-0.25, 0.1) Intercept          1                            
+##    normal(-0.25, 0.1) Intercept          2                            
+##  lkj_corr_cholesky(2)         L                                       
+##  lkj_corr_cholesky(2)         L               id                      
+##  lkj_corr_cholesky(2)         L               te                      
+##  student_t(3, 0, 2.5)        sd                                       
+##        normal(1, 0.1)        sd               id                      
+##        normal(1, 0.1)        sd    age_std    id                      
+##        normal(1, 0.1)        sd    doe_std    id                      
+##        normal(1, 0.1)        sd   freq_std    id                      
+##        normal(1, 0.1)        sd  Intercept    id                      
+##        normal(1, 0.1)        sd n_phon_std    id                      
+##        normal(1, 0.1)        sd               te                      
+##        normal(1, 0.1)        sd    age_std    te                      
+##        normal(1, 0.1)        sd    doe_std    te                      
+##        normal(1, 0.1)        sd   freq_std    te                      
+##        normal(1, 0.1)        sd  Intercept    te                      
+##        normal(1, 0.1)        sd n_phon_std    te                      
+##        source
+##       default
+##          user
+##          user
+##          user
+##          user
+##          user
+##  (vectorized)
+##  (vectorized)
+##          user
+##  (vectorized)
+##  (vectorized)
+##       default
+##          user
+##  (vectorized)
+##  (vectorized)
+##  (vectorized)
+##  (vectorized)
+##  (vectorized)
+##          user
+##  (vectorized)
+##  (vectorized)
+##  (vectorized)
+##  (vectorized)
+##  (vectorized)
+```
+
+```r
+tribble(
+    ~class, ~group, ~coef_name, ~coef, ~prior,
+    "Regression coefficients: Intercepts (\u03b20)", NA, "Intercept[1] (Comprehension)", "b_Intercept[1]", "N(-0.25, 0.1)",
+    "Regression coefficients: Intercepts (\u03b20)", NA,"Intercept[2] (Production)", "b_Intercept[2]", "N(-0.25, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Age (+1 SD)", "b_age_std", "N(1, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Frequency (+1 SD)", "b_freq_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 # Phonemes (+1 SD)", "b_n_phon_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", NA, "Exposure (+1 SD)", "b_doe_std", "N(0, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "\u03c3 Intercept", "sd_te__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "Age (+1 SD)", "sd_te__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "Frequency (+1 SD)", "sd_te__freq_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "# Phonemes (+1 SD)", "sd_te__n_phon_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "TE", "Exposure (+1 SD)", "sd_te__doe_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Intercept", "sd_te__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Age (+1 SD)", "sd_id__Intercept", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Frequency (+1 SD)", "sd_id__freq_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "# Phonemes (+1 SD)", "sd_id__n_phon_std", "N(1, 0.1)",
+    "Standard deviations (\u03c3)", "ID", "Exposure (+1 SD)", "sd_id__doe_std", "N(1, 0.1)",
+    "Correlations (\u03c1)", "TE", NA, "cor_te__*", "LkjCorr(2)",
+    "Correlations (\u03c1)", "ID", NA, "cor_id__*", "LkjCorr(2)"
+) %>% 
+    gt(groupname_col = c("class", "group")) %>% 
+    tab_style(
+        cell_text(align = "left"),
+        cells_body()
+    ) %>% 
+    cols_label(
+        class = "Class",
+        group = "Group",
+        coef_name = "Name",
+        coef = "brms",
+        prior = "Prior"
+    ) %>% 
+    tab_spanner("Parameter", c("coef_name", "coef")) %>% 
+    sub_missing(everything(), missing_text = "--") %>% 
+    tab_style(
+        cell_fill(color = "grey"),
+        cells_row_groups()
+    )
+```
+
+```{=html}
+<div id="vydkcohmjb" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>html {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
+}
+
+#vydkcohmjb .gt_table {
+  display: table;
+  border-collapse: collapse;
+  margin-left: auto;
+  margin-right: auto;
+  color: #333333;
+  font-size: 16px;
+  font-weight: normal;
+  font-style: normal;
+  background-color: #FFFFFF;
+  width: auto;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #A8A8A8;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #A8A8A8;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_heading {
+  background-color: #FFFFFF;
+  text-align: center;
+  border-bottom-color: #FFFFFF;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_title {
+  color: #333333;
+  font-size: 125%;
+  font-weight: initial;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-color: #FFFFFF;
+  border-bottom-width: 0;
+}
+
+#vydkcohmjb .gt_subtitle {
+  color: #333333;
+  font-size: 85%;
+  font-weight: initial;
+  padding-top: 0;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-color: #FFFFFF;
+  border-top-width: 0;
+}
+
+#vydkcohmjb .gt_bottom_border {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_col_headings {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_col_heading {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 6px;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow-x: hidden;
+}
+
+#vydkcohmjb .gt_column_spanner_outer {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: normal;
+  text-transform: inherit;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+#vydkcohmjb .gt_column_spanner_outer:first-child {
+  padding-left: 0;
+}
+
+#vydkcohmjb .gt_column_spanner_outer:last-child {
+  padding-right: 0;
+}
+
+#vydkcohmjb .gt_column_spanner {
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: bottom;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  overflow-x: hidden;
+  display: inline-block;
+  width: 100%;
+}
+
+#vydkcohmjb .gt_group_heading {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#vydkcohmjb .gt_empty_group_heading {
+  padding: 0.5px;
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  vertical-align: middle;
+}
+
+#vydkcohmjb .gt_from_md > :first-child {
+  margin-top: 0;
+}
+
+#vydkcohmjb .gt_from_md > :last-child {
+  margin-bottom: 0;
+}
+
+#vydkcohmjb .gt_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  margin: 10px;
+  border-top-style: solid;
+  border-top-width: 1px;
+  border-top-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 1px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 1px;
+  border-right-color: #D3D3D3;
+  vertical-align: middle;
+  overflow-x: hidden;
+}
+
+#vydkcohmjb .gt_stub {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vydkcohmjb .gt_stub_row_group {
+  color: #333333;
+  background-color: #FFFFFF;
+  font-size: 100%;
+  font-weight: initial;
+  text-transform: inherit;
+  border-right-style: solid;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+  padding-left: 5px;
+  padding-right: 5px;
+  vertical-align: top;
+}
+
+#vydkcohmjb .gt_row_group_first td {
+  border-top-width: 2px;
+}
+
+#vydkcohmjb .gt_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vydkcohmjb .gt_first_summary_row {
+  border-top-style: solid;
+  border-top-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_first_summary_row.thick {
+  border-top-width: 2px;
+}
+
+#vydkcohmjb .gt_last_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_grand_summary_row {
+  color: #333333;
+  background-color: #FFFFFF;
+  text-transform: inherit;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vydkcohmjb .gt_first_grand_summary_row {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 5px;
+  padding-right: 5px;
+  border-top-style: double;
+  border-top-width: 6px;
+  border-top-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_striped {
+  background-color: rgba(128, 128, 128, 0.05);
+}
+
+#vydkcohmjb .gt_table_body {
+  border-top-style: solid;
+  border-top-width: 2px;
+  border-top-color: #D3D3D3;
+  border-bottom-style: solid;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_footnotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_footnote {
+  margin: 0px;
+  font-size: 90%;
+  padding-left: 4px;
+  padding-right: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vydkcohmjb .gt_sourcenotes {
+  color: #333333;
+  background-color: #FFFFFF;
+  border-bottom-style: none;
+  border-bottom-width: 2px;
+  border-bottom-color: #D3D3D3;
+  border-left-style: none;
+  border-left-width: 2px;
+  border-left-color: #D3D3D3;
+  border-right-style: none;
+  border-right-width: 2px;
+  border-right-color: #D3D3D3;
+}
+
+#vydkcohmjb .gt_sourcenote {
+  font-size: 90%;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+#vydkcohmjb .gt_left {
+  text-align: left;
+}
+
+#vydkcohmjb .gt_center {
+  text-align: center;
+}
+
+#vydkcohmjb .gt_right {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+#vydkcohmjb .gt_font_normal {
+  font-weight: normal;
+}
+
+#vydkcohmjb .gt_font_bold {
+  font-weight: bold;
+}
+
+#vydkcohmjb .gt_font_italic {
+  font-style: italic;
+}
+
+#vydkcohmjb .gt_super {
+  font-size: 65%;
+}
+
+#vydkcohmjb .gt_two_val_uncert {
+  display: inline-block;
+  line-height: 1em;
+  text-align: right;
+  font-size: 60%;
+  vertical-align: -0.25em;
+  margin-left: 0.1em;
+}
+
+#vydkcohmjb .gt_footnote_marks {
+  font-style: italic;
+  font-weight: normal;
+  font-size: 75%;
+  vertical-align: 0.4em;
+}
+
+#vydkcohmjb .gt_asterisk {
+  font-size: 100%;
+  vertical-align: 0;
+}
+
+#vydkcohmjb .gt_slash_mark {
+  font-size: 0.7em;
+  line-height: 0.7em;
+  vertical-align: 0.15em;
+}
+
+#vydkcohmjb .gt_fraction_numerator {
+  font-size: 0.6em;
+  line-height: 0.6em;
+  vertical-align: 0.45em;
+}
+
+#vydkcohmjb .gt_fraction_denominator {
+  font-size: 0.6em;
+  line-height: 0.6em;
+  vertical-align: -0.05em;
+}
+</style>
+<table class="gt_table">
+  
+  <thead class="gt_col_headings">
+    <tr>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="2">
+        <span class="gt_column_spanner">Parameter</span>
+      </th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1">Prior</th>
+    </tr>
+    <tr>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">Name</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1">brms</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr class="gt_group_heading_row">
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Regression coefficients: Intercepts (β0) - NA</td>
+    </tr>
+    <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">Intercept[1] (Comprehension)</td>
+<td class="gt_row gt_left" style="text-align: left;">b_Intercept[1]</td>
+<td class="gt_row gt_left" style="text-align: left;">N(-0.25, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Intercept[2] (Production)</td>
+<td class="gt_row gt_left" style="text-align: left;">b_Intercept[2]</td>
+<td class="gt_row gt_left" style="text-align: left;">N(-0.25, 0.1)</td></tr>
+    <tr class="gt_group_heading_row">
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Regression coefficients: predictors (β1-9) - NA</td>
+    </tr>
+    <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">β Age (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">b_age_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">β Frequency (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">b_freq_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(0, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">β # Phonemes (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">b_n_phon_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(0, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Exposure (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">b_doe_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(0, 0.1)</td></tr>
+    <tr class="gt_group_heading_row">
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Standard deviations (σ) - TE</td>
+    </tr>
+    <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">σ Intercept</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_te__Intercept</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Age (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_te__Intercept</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Frequency (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_te__freq_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;"># Phonemes (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_te__n_phon_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Exposure (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_te__doe_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr class="gt_group_heading_row">
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Standard deviations (σ) - ID</td>
+    </tr>
+    <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">Intercept</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_te__Intercept</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Age (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_id__Intercept</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Frequency (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_id__freq_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;"># Phonemes (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_id__n_phon_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr><td class="gt_row gt_left" style="text-align: left;">Exposure (+1 SD)</td>
+<td class="gt_row gt_left" style="text-align: left;">sd_id__doe_std</td>
+<td class="gt_row gt_left" style="text-align: left;">N(1, 0.1)</td></tr>
+    <tr class="gt_group_heading_row">
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Correlations (ρ) - TE</td>
+    </tr>
+    <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">&ndash;</td>
+<td class="gt_row gt_left" style="text-align: left;">cor_te__*</td>
+<td class="gt_row gt_left" style="text-align: left;">LkjCorr(2)</td></tr>
+    <tr class="gt_group_heading_row">
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Correlations (ρ) - ID</td>
+    </tr>
+    <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">&ndash;</td>
+<td class="gt_row gt_left" style="text-align: left;">cor_id__*</td>
+<td class="gt_row gt_left" style="text-align: left;">LkjCorr(2)</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+```
+
+
+#### Implentación en `brms`
+
+```r
+model_prior <- c(
 prior(normal(-0.25, 0.1), class = "Intercept"),
-prior(normal(1, 0.1), class = "b", coef = "age_std"),
-prior(normal(0, 0.5), class = "b", coef = "dominance1"),
-prior(normal(0, 0.5), class = "b", coef = "age_std:dominance1"),
 prior(normal(1, 0.1), class = "sd", group = "te"),
 prior(normal(1, 0.1), class = "sd", group = "id"),
-prior(lkj(2), class = "cor")
+prior(lkj(2), class = "cor"),
+prior(normal(1, 0.1), class = "b", coef = "age_std"),
+prior(normal(0, 0.1), class = "b", coef = "freq_std"),
+prior(normal(0, 0.1), class = "b", coef = "n_phon_std"),
+prior(normal(0, 0.1), class = "b", coef = "doe_std")
 )
 ```
 
 
+```r
+model_fit_4 %>% 
+    gather_draws(`b_.*`, `sd_.*`, regex = TRUE) %>% 
+    mutate(
+        group = case_when(
+            str_detect(.variable, "b_") ~ "Population effect (\u03b2)",
+            str_detect(.variable, "sd_") & str_detect(.variable, "_te_") ~ "Standard deviation (\u03c3): TE",
+            str_detect(.variable, "sd_") & str_detect(.variable, "_id_") ~ "Standard deviation (\u03c3): ID"
+        ),
+        .variable = factor(
+            .variable,
+            levels = c(
+                "b_Intercept[1]",
+                "b_Intercept[2]",
+                "b_age_std",
+                "b_freq_std",
+                "b_n_phon_std",
+                "b_doe_std",
+                "sd_te__Intercept",
+                "sd_te__age_std",
+                "sd_te__freq_std",
+                "sd_te__n_phon_std",
+                "sd_te__doe_std",
+                "sd_id__Intercept",
+                "sd_id__age_std",
+                "sd_id__freq_std",
+                "sd_id__n_phon_std",
+                "sd_id__doe_std"
+            ),
+            labels = c(
+                "Intercept[1] (Comprehension)",
+                "Intercept[2] (Production)",
+                "Age (+1 SD)",
+                "Frequency (+1 SD)",
+                "# Phonemes (+1 SD)",
+                "Exposure (+1 SD)",
+                "Intercept",
+                "Age (+1 SD) ",
+                "Frequency (+1 SD)",
+                "# Phonemes (+1 SD)",
+                "Exposure (+1 SD)",
+                "Intercept",
+                "Age (+1 SD)",
+                "Frequency (+1 SD)",
+                "# Phonemes (+1 SD)",
+                "Exposure (+1 SD)"
+            ),
+            ordered = TRUE
+        ),
+        .chain = as.factor(.chain),
+        .value = ifelse(str_detect(.variable, "Intercept"), inv_logit_scaled(.value), .value/4)
+    ) %>% 
+    ggplot() +
+    aes(
+        x = .value,
+        y = reorder(.variable, desc(.variable))
+    ) +
+    facet_wrap(
+        ~group,
+        scales = "free_x"
+    ) +
+    geom_vline(
+        xintercept = 0,
+        linetype = "dotted"
+    ) +
+    stat_pointinterval(
+        colour = "black",
+        point_size = 1
+    ) +
+    scale_fill_manual(
+        values = c(pal_d3()(1)[1], "#57a9e2", "#aed6f1")
+    ) +
+    labs(
+        x = "Sampling space",
+        y = "Posterior likelihood density",
+        fill = "Credible Interval"
+    ) +
+    scale_x_continuous(
+        labels = percent
+    ) +
+    theme(
+        legend.position = "top",
+        panel.grid.major.y = element_line(colour = "grey"),
+        panel.border = element_rect(fill = NA, colour = "black", size = 1)
+    )
+```
 
-## Distribución previa
-
----
+<img src="index_files/figure-html/model-prior-brms-1.png" width="90%" />
 
 
-## Diagnósticos
+#### {-}
 
----
+
+### Predicciones previas
+
+
+```r
+df_preds <- expand_grid(
+    age_std = seq(-4, 4, 0.1),
+    freq_std = 0,
+    n_phon_std = 0,
+    doe_std = 0
+) 
+
+# expected posterior predictions 
+preds <- add_epred_draws(
+    newdata = df_preds, 
+    object = model_fit_4_prior,
+    ndraws = 25,
+    re_formula = NA
+) %>% 
+    pivot_wider(
+        names_from = .category,
+        values_from = .epred
+    ) %>% 
+    mutate(
+        Understands = Understands + `Understands and Says`
+    ) %>% 
+    pivot_longer(
+        c(No, Understands, `Understands and Says`),
+        names_to = ".category",
+        values_to = ".epred"
+    ) %>% 
+    # get curves of interest
+    filter(.category %in% c("Understands", "Understands and Says")) %>% 
+    # more informative labels
+    mutate(
+        .category = case_when(
+            .category=="Understands" ~ "Comprehension",
+            .category=="Understands and Says" ~ "Production"
+        ),
+        # see R/utils.R
+        age = rescale_variable(age_std, mean = mean(df$age), sd = sd(df$age))
+    ) 
+
+# empirical response cumulative probabilities
+aoas <- get_aoa(preds, .category) 
+
+plot_curves <- preds %>%  
+    ggplot() +
+    aes(
+        x = age,
+        y = .epred,
+        shape = .category,
+        linetype = .category,
+        group = .category
+    ) +
+    # linea de referencia (50% suele ser considerado el punto de adquisición)
+    geom_hline(
+        yintercept = 0.5,
+        colour = "grey",
+        alpha = 1
+    ) +
+    # # posterior predictions for each individual posterior draw
+    # stat_summary(
+    #     fun.data = mean_qi,
+    #     geom = "ribbon",
+    #     colour = NA,
+    #     alpha = 0.5
+    # ) +
+    geom_line(
+        aes(group = interaction(.draw, .category , sep = " / ")),
+        alpha = 0.1,
+        size = 0.5,
+        linetype = "solid"
+    ) +
+    stat_summary(
+        fun = mean,
+        aes(group = .category),
+        geom = "line",
+        size  = 1
+    ) +
+    labs(
+        x = "Age (months)",
+        y = "P(acquisition | age)",
+        shape = "Response",
+        linetype = "Response",
+        title = "Acquisition curves",
+        subtitle = "Each line corresponds to a posterior prediction"
+    ) +
+    scale_color_d3() +
+    scale_fill_d3() +
+    scale_y_continuous(
+        labels = percent
+    ) +
+    scale_x_continuous(
+        breaks = seq(0, 45, 5)
+    ) +
+    theme(
+        legend.position = "bottom",
+        panel.grid.major.x = element_line(colour = "grey", linetype = "dotted"),
+        axis.text.x.top = element_text(),
+        axis.title.x.top = element_text(colour = "top"),
+        axis.ticks.x.top = element_line(),
+        axis.title.x.bottom = element_blank(),
+        axis.text.x.bottom = element_blank(),
+        axis.ticks.x.bottom = element_blank(),
+        axis.line.x = element_blank()
+    ) 
+
+plot_aoas <- aoas %>% 
+    filter(.category != "No") %>% 
+    ggplot() +
+    aes(
+        x = aoa,
+        y = 0,
+        shape = .category
+    ) +
+    annotate(
+        geom = "text",
+        x = c(5, 40),
+        y = -0.1,
+        vjust = -1,
+        hjust = c(1, 0),
+        label = c("Acquired earlier", "Acquired later")
+    ) +
+    annotate(
+        geom = "segment",
+        x = c(5, 40),
+        xend = c(0, 45),
+        y = -0.1,
+        yend = -0.1,
+        arrow = arrow(angle = 30, length = unit(0.2, "cm"))
+    ) +
+    stat_pointinterval(
+        position = position_dodge(width = 0.5),
+        point_interval = mean_qi
+    ) +    
+    labs(
+        x = "Age (months)",
+        y = "Response",
+        title = "Age of acquisition",
+        shape = "Response",
+        linetype = "Response"
+    ) +
+    guides(colour = "none") +
+    scale_x_continuous(
+        limits = c(0, 45),
+        breaks = seq(0, 45, 5)
+    ) +
+    scale_color_d3() +
+    scale_fill_d3() +
+    theme(
+        legend.title = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank()
+    )
+
+plot_curves + 
+    plot_aoas +
+    plot_layout(
+        ncol = 1,
+        heights = c(0.8, 0.2),
+        guides = "collect"
+    ) &
+    plot_annotation(
+        title = "Posterior predictions",
+        tag_levels = "A"
+    ) &
+    theme(
+        legend.position = "top"
+    )
+```
+
+<img src="index_files/figure-html/prior-predictions-1.png" width="90%" />
+
+# Resultados {.tabset}
+
+## Distribución de respuestas
+
+
+```r
+df %>% 
+    mutate(
+        age = cut(age, seq(10, 36, 2), include.lowest = TRUE),
+        doe = cut(doe, seq(0, 1, 0.25), include.lowest = TRUE)
+    ) %>% 
+    count(age, doe, response) %>% 
+    ggplot() +
+    aes(
+        age,
+        n,
+        fill = response
+    ) +
+    facet_wrap(
+        ~doe,
+        labeller = label_both
+    ) +
+    geom_col(
+        position = position_fill()
+    ) +
+    geom_hline(
+        yintercept = 0.5,
+        size = 1,
+        colour = "grey"
+    ) +
+    labs(
+        x = "Edad (meses)",
+        y = "Porcentaje de respuestas",
+        fill = "Respuesta"
+    ) +
+    scale_fill_d3() +
+    scale_y_continuous(labels = percent) +
+    scale_x_discrete(
+        guide = guide_axis(n.dodge = 2)
+    ) +
+    theme(
+        legend.position = "top"
+    )
+```
+
+<img src="index_files/figure-html/response-distribution-1.png" width="90%" />
 
 
 ## Distribución posterior
 
 <img src="index_files/figure-html/fixed-coefs-1.png" width="90%" />
 
----
 
 
-# Predicciones posteriores {.tabset}
+## Predicciones posteriores {.tabset}
 
-## Efectos poblacionales
+### Efectos poblacionales
 
 ![](index_files/figure-html/posterior-preds-1.png)<!-- -->
 
----
 
 
-## Frecuencia léxica 
+### Frecuencia léxica 
 
 
 ```r
@@ -1023,10 +1961,9 @@ preds_freq %>%
 
 <img src="index_files/figure-html/post-preds-freq-1.png" width="90%" />
 
----
 
 
-## Número de fonemas
+### Número de fonemas
 
 
 ```r
@@ -1137,10 +2074,9 @@ preds_n_phon %>%
 
 <img src="index_files/figure-html/post-preds-phon-1.png" width="90%" />
 
----
 
 
-## Exposición a la lengua
+### Exposición a la lengua
 
 
 
@@ -1249,13 +2185,13 @@ preds_doe %>%
 <img src="index_files/figure-html/post-preds-doe-1.png" width="90%" />
 
 
-## {-}
+### {-}
 
 
 
 # Conclusiones
 
----
+
 
 # Anexos {.tabset}
 

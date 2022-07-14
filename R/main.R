@@ -21,15 +21,14 @@ model_prior <- c(
     prior(normal(1, 0.1), class = "b", coef = "age_std"),
     prior(normal(0, 0.1), class = "b", coef = "freq_std"),
     prior(normal(0, 0.1), class = "b", coef = "n_phon_std"),
-    prior(normal(0, 0.1), class = "b", coef = "doe_std"),
-    prior(normal(0, 0.1), class = "b", coef = "age_std:doe_std")
+    prior(normal(0, 0.1), class = "b", coef = "doe_std")
 )
 
 model_fit_4 <- brm(
     formula = bf(
-        response ~ age_std + freq_std + n_phon_std + doe_std*lv_std + age_std:(doe_std*lv_std) + 
-            (1 + age_std + freq_std + n_phon_std + age_std:(doe_std*lv_std) | id) +
-            (1 + age_std + freq_std + n_phon_std + age_std:doe_std | te),
+        response ~ age_std + freq_std + n_phon_std + doe_std +
+            (1 + age_std + freq_std + n_phon_std + doe_std | id) + 
+            (1 + age_std + freq_std + n_phon_std + doe_std | te) ,
         family = cratio(link = "logit") # cumulative, continuation ratio
     ), 
     data = df,
@@ -46,7 +45,32 @@ model_fit_4 <- brm(
         adapt_delta = 0.9, # for better convergence of MCMCs
         max_treedepth = 15
     ),
-    save_model = here("stan", paste0(name, ".stan")) # save Stan code
+    save_model = here("stan", "fit_4.stan") # save Stan code
+)
+
+
+model_fit_4_prior <- brm(
+    formula = bf(
+        response ~ age_std + freq_std + n_phon_std + doe_std + 
+            (1 + age_std + freq_std + n_phon_std + doe_std | id) + 
+            (1 + age_std + freq_std + n_phon_std + doe_std | te) ,
+        family = cratio(link = "logit") # cumulative, continuation ratio
+    ), 
+    data = df,
+    prior = model_prior,
+    sample_prior = "only", # for faster computation of Bayes Factors and LOO
+    iter = 4000,
+    chains = 2,
+    init = 0, # where to initialise MCMCs
+    seed = 888, # for reproducibility
+    backend = "cmdstanr", # for faster, less problematic compilation in C++
+    file = here("results", "fit_4_prior.rds"), # save model as file
+    # file_refit = "always", # should model be refitted or loaded from file?
+    control = list(
+        adapt_delta = 0.9, # for better convergence of MCMCs
+        max_treedepth = 15
+    ),
+    save_model = here("stan", "fit_4_prior.stan") # save Stan code
 )
 
 # diagnose model ----
