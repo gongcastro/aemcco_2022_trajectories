@@ -38,13 +38,14 @@ library(scales)
 library(ggrepel)
 library(stringr)
 library(multilex)
+library(tidytext)
 library(papaja)
 
 # load helper functions
 source(here("R", "utils.R"))
 
 # set ggplot2 theme
-theme_set(theme_custom())
+theme_set(theme_custom()) # from utils.R
 
 # load datasets
 participants <- read_ipc_stream(here("data", "participants.parquet"))
@@ -61,6 +62,8 @@ preds_age <- read_ipc_stream(here("results", "posterior_predictions-population.p
 preds_freq <- read_ipc_stream(here("results", "posterior_predictions-frequency.parquet"))
 preds_n_phon <- read_ipc_stream(here("results", "posterior_predictions-n_phon.parquet"))
 preds_doe <- read_ipc_stream(here("results", "posterior_predictions-doe.parquet"))
+aoas <- read_ipc_stream(here("results", "posterior_aoas-population.parquet"))
+wordbank_aoas <- read_ipc_stream(here("data", "wordbank-aoa.parquet"))
 
 ```
 
@@ -76,7 +79,7 @@ El objetivo de este estudio es estimar la edad de adquisición de palabras en ca
 * Uno de los hitos más importantes en el desarrollo de un bebé es el aprendizaje de palabras.
 * La adquisición del lenguaje comienza muy temprano, incluso dentro del útero. Antes de que un bebé comience a aprender palabras, ya ha completado con éxito muchas tareas evolutivas relativas a su familiarización con las lenguas que escuchan.
 * Existe debate sobre qué es una palabra y sobre qué significa aprenderla, pero en el contexto de este estudio lo definiremos como una asociación estable, sensible y específica entre un conjunto de fonemas y un evento u objeto.
-* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
+* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994variability], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
 * Aun así, el tamaño del vocabulario de un bebé es muy reducido hasta los 15 meses, cuando la gran mayoría conocen poco menos de 15 palabras
 * A los 18 meses, los bebés comienzan a adquirir palabras a un ritmo mucho mayor: a los 24 meses ya conocen cerca de 400 palabras. A partir de los 30 meses (2.5 años) el ritmo de adquisición de palabras crece a un ritmo más estable hasta la adultez.
 
@@ -97,7 +100,7 @@ El objetivo de este estudio es estimar la edad de adquisición de palabras en ca
 
 ## Cuestionario
 
-**MultiLex** es un cuestionario inspirado en el *McArthur-Bates Communicative Development Inventory* [CDI, @fenson1994variability] en el que presentamos una lista de palabras a las personas a cargo de cada participante. Les pedimos que, para cada palabra, respondan si creen que el participante *No comprende ni dice* la palabra, *Comprende* la palabra o *Comprende y dice* la palabra. Las palabras incluidas son palabras que normalmente aprenden los niños en las edades de interés, aunque varían en su frecuencia léxica (el número de veces que aparecen en el habla natural) y por tanto también en su dificultad. Estas palabras pertenecen a diversas categorías conceptuales/funcionales, como *Comida* o *Adverbios*. Para los análisis de este estudio seleccionamos únicamente palabras de contenido (sustantivos, verbos y adjetivos).
+**MultiLex** es un cuestionario inspirado en el *McArthur-Bates Communicative Development Inventory* [CDI, @fenson1994variabilityvariability] en el que presentamos una lista de palabras a las personas a cargo de cada participante. Les pedimos que, para cada palabra, respondan si creen que el participante *No comprende ni dice* la palabra, *Comprende* la palabra o *Comprende y dice* la palabra. Las palabras incluidas son palabras que normalmente aprenden los niños en las edades de interés, aunque varían en su frecuencia léxica (el número de veces que aparecen en el habla natural) y por tanto también en su dificultad. Estas palabras pertenecen a diversas categorías conceptuales/funcionales, como *Comida* o *Adverbios*. Para los análisis de este estudio seleccionamos únicamente palabras de contenido (sustantivos, verbos y adjetivos).
 
 Las familias rellenaron una de las cuatro versiones del cuestionario. Cada version contiene una selección de ~600 palabras diferentes (300 en catalán, 300 en castellano), a excepción de algunas palabras que se repiten a través de las versiones. Las palabras incluidas en castellano son traducciones equivalentes de las palabras en catalán. Más detalles sobre el cuestionario en el repositorio de [multilex](https://github.com/gongcastro/multilex).
 
@@ -394,19 +397,88 @@ Hemos ejecutado el modelo especificando los siguientes ajustes:
 
 ### Distribución previa {.tab-pills}
 
+Hemos especificado una distribución previa informativa de acuerdo con estimaciones previas de adquisición de palabras medida con el CDI en múltiples lenguas. Se consultaron estas estimaciones en la plataforma [Wordbank](https://mikabr.io/aoa-prediction/aoa_estimation.html). A través de múltiples lenguas, la mayoría de palabras incluidas en la adaptación correspondiente del CDI se  comprenden alrededor de los `r mean(wordbank_aoas$aoa[wordbank_aoas$measure=="Comprehension"])` meses y se producen alrededor de los `r mean(wordbank_aoas$aoa[wordbank_aoas$measure=="Production"])` meses. Hemos ajustado estas estimaciones a la población mayoritariamente bilingüe de nuestra muestra, para quienes existe evidence de una edad de adquisición de palabras ligeramente más tardía.
+
+```{r wordbank-aoa, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+aoa_summary <- wordbank_aoas %>% 
+    group_by(measure) %>% 
+    summarise(
+        mean_aoa = mean(aoa),
+        sd_aoa = sd(aoa),
+        .groups = "drop"
+    ) 
+
+wordbank_aoas %>% 
+    mutate(language_reordered = reorder_within(language, aoa, measure)) %>% 
+    ggplot() +
+    aes(
+        x = aoa,
+        y = reorder(language_reordered, aoa),
+        xmin = .lower,
+        xmax = .upper
+    ) +
+    facet_wrap(~measure, scales = "free_y") +
+    geom_interval() +
+    geom_rect(
+        data = aoa_summary,
+        aes(
+            xmin = mean_aoa - sd_aoa,
+            xmax = mean_aoa + sd_aoa,
+            ymin = -Inf,
+            ymax = Inf,
+        ) ,
+        fill = pal_d3()(2)[2],
+        alpha = 0.5,
+        inherit.aes = FALSE
+    ) +
+    geom_point(
+        shape = 4,
+        size = 2,
+        stroke = 0.75,
+        colour = "white"
+    ) +
+    geom_vline(
+        data = aoa_summary,
+        aes(
+            xintercept = mean_aoa,
+        ),
+        size = 0.75,
+        colour = pal_d3()(2)[2]
+    ) +
+    labs(
+        x = "Word age of acquisition (acquired by 50% of sample)",
+        y = "Language",
+        colour = "Percentile",
+        fill = "Percentile",
+        title = "Distribution of ages of acquisition across languages",
+        subtitle = "Orange lines and intervals indicate grand mean and SD",
+        caption = "Source: Wordbank (see https://mikabr.io/aoa-prediction/aoa_estimation.html)"
+    ) +
+    scale_color_brewer() +
+    scale_y_reordered() +
+    theme(
+        legend.position = "top",
+        axis.title.y = element_blank(),
+        panel.grid.major.y = element_blank(),
+        plot.caption.position = "plot",
+        plot.title.position = "plot",
+        plot.caption = element_text(hjust = 0)
+    )
+
+```
+
 #### Tabla
 
-```{r model-prior}
-model_fit_4$prior
-
+```{r model-prior, echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 tribble(
     ~class, ~group, ~coef_name, ~coef, ~prior,
-    "Regression coefficients: Intercepts (\u03b20)", NA, "Intercept[1] (Comprehension)", "b_Intercept[1]", "N(-0.25, 0.1)",
-    "Regression coefficients: Intercepts (\u03b20)", NA,"Intercept[2] (Production)", "b_Intercept[2]", "N(-0.25, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Age (+1 SD)", "b_age_std", "N(1, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Frequency (+1 SD)", "b_freq_std", "N(0, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 # Phonemes (+1 SD)", "b_n_phon_std", "N(0, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "Exposure (+1 SD)", "b_doe_std", "N(0, 0.1)",
+    "Regression coefficients: Intercepts (\u03b20)", "Population", "Intercept[1] (Comprehension)", "b_Intercept[1]", "N(-0.25, 0.1)",
+    "Regression coefficients: Intercepts (\u03b20)", "Population","Intercept[2] (Production)", "b_Intercept[2]", "N(-0.25, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "\u03b2 Age (+1 SD)", "b_age_std", "N(1, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "\u03b2 Frequency (+1 SD)", "b_freq_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "\u03b2 # Phonemes (+1 SD)", "b_n_phon_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "Exposure (+1 SD)", "b_doe_std", "N(0, 0.1)",
     "Standard deviations (\u03c3)", "TE", "\u03c3 Intercept", "sd_te__Intercept", "N(1, 0.1)",
     "Standard deviations (\u03c3)", "TE", "Age (+1 SD)", "sd_te__Intercept", "N(1, 0.1)",
     "Standard deviations (\u03c3)", "TE", "Frequency (+1 SD)", "sd_te__freq_std", "N(1, 0.1)",
@@ -821,11 +893,8 @@ fix_coefs %>%
 
 ```{r posterior-preds, echo=FALSE, fig.height=9, fig.width=10, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000}
 
-# empirical response cumulative probabilities
-aoas <- get_aoa(preds, .category, doe_std) %>% 
+aoas <- get_aoa(preds_age, .category, doe_std) %>% 
     mutate(doe_std = paste0(doe_std, " SD")) 
-
-write_ipc_stream(aoas, here("results", "posterior_aoas-population.parquet"))
 
 observations <- df %>% 
     mutate(
@@ -931,7 +1000,7 @@ labs(
     shape = "Response",
     linetype = "Response",
     title = "Acquisition curves",
-    subtitle = "Each line corresponds to a posterior prediction"
+    subtitle = "Mean posterior predictions and 95% credible intervals"
 ) +
     scale_color_d3() +
     scale_fill_d3() +
@@ -1031,15 +1100,19 @@ plot_curves +
 preds_freq_observed <- df %>%
     left_join(select(items, te, item, ipa_flat)) %>% 
     filter(
-        te %in% items$te[items$item %in% c(
-            c(
-                "spa_casa",
-                "spa_jirafa",
-                "spa_columpiar",
-                "spa_mama"
-            )
-        )]
-    ) %>% 
+        between(age_std, -0.5, 0.5),
+        between(doe_std, -0.5, 0.5),
+        #     te %in% items$te[items$item %in% c(
+        #         c(
+        #             "spa_casa",
+        #             "spa_jirafa",
+        #             "spa_columpiar",
+        #             "spa_silla",
+        #             "spa_vaca",
+        #             ""
+        #         )
+        #     )]
+    ) %>%
     group_by(te, item, ipa_flat, freq) %>% 
     summarise(
         yes_Production = sum(response=="Understands and Says"),
@@ -1082,41 +1155,42 @@ preds_freq %>%
         geom = "line",
         size = 1
     ) +
-    geom_line(
-        data = preds_freq_observed,
-        aes(
-            y = prop,
-            group = te
-        ),
-        size = 1,
-        colour = "grey"
-    ) +
-    geom_label_repel(
-        data = preds_freq_observed %>% 
-            group_by(.category, te, item, ipa_flat, freq) %>% 
-            summarise(
-                prop = max(prop),
-                .groups = "drop"
-            ),
-        box.padding = 1,
-        min.segment.length = 10,
-        aes(
-            y = prop, 
-            label = paste0("/", ipa_flat, "/")
-        ),
-        size = 5,
-        alpha = 0.65,
-        label.size = 0,
-        label.r = 0,
-        fill = "white"
-    ) +
-    geom_point(
-        data = preds_freq_observed,
-        aes(
-            y = prop, 
-        ),
-        size = 2
-    ) +
+    # geom_line(
+    #     data = preds_freq_observed,
+    #     aes(
+    #         y = prop,
+    #         group = te
+    #     ),
+    #     size = 1,
+    #     colour = "grey"
+    # ) +
+    # geom_label_repel(
+    #     data = preds_freq_observed %>% 
+#         group_by(.category, te, item, ipa_flat, freq) %>% 
+#         summarise(
+#             prop = max(prop),
+#             .groups = "drop"
+#         ),
+#     box.padding = 1,
+#     min.segment.length = 10,
+#     aes(
+#         y = prop, 
+#         label = paste0("/", ipa_flat, "/")
+#     ),
+#     size = 5,
+#     alpha = 0.65,
+#     label.size = 0,
+#     label.r = 0,
+#     fill = "white"
+# ) +
+geom_point(
+    data = preds_freq_observed,
+    aes(
+        y = prop, 
+    ),
+    size = 2,
+    alpha = 0.1
+) +
     labs(
         x = "Frequency (Zipf score)",
         y = "P(acquisition | frequency)",
@@ -1143,6 +1217,8 @@ preds_freq %>%
 preds_n_phon_observed <- df %>%
     left_join(select(items, te, item, ipa_flat)) %>% 
     filter(
+        between(age_std, 0, 0.1),
+        between(doe_std, -0.5, 0.5),
         te %in% items$te[items$item %in% c(
             c(
                 "spa_chapotear",
@@ -1204,15 +1280,16 @@ preds_n_phon %>%
         colour = "grey"
     ) +
     geom_label_repel(
-        data = preds_n_phon_observed %>% 
-            group_by(.category, te, item, ipa_flat, n_phon) %>% 
+        data = preds_n_phon_observed %>%
+            group_by(.category, te, item, ipa_flat, n_phon) %>%
             summarise(
                 prop = max(prop),
                 .groups = "drop"
             ),
-        box.padding = 1, min.segment.length = 10,
+        box.padding = 0.2, 
+        min.segment.length = 10,
         aes(
-            y = prop, 
+            y = prop,
             label = paste0("/", ipa_flat, "/")
         ),
         size = 5,

@@ -9,6 +9,7 @@ library(ggsci)
 library(ggrepel)
 library(stringr)
 library(tibble)
+library(job)
 
 df <- read_ipc_stream(here("data", "main.parquet"))
 
@@ -21,7 +22,9 @@ model_prior <- c(
     prior(normal(1, 0.1), class = "b", coef = "age_std"),
     prior(normal(0, 0.1), class = "b", coef = "freq_std"),
     prior(normal(0, 0.1), class = "b", coef = "n_phon_std"),
-    prior(normal(0, 0.1), class = "b", coef = "doe_std")
+    prior(normal(0, 0.1), class = "b", coef = "doe_std"),
+    prior(normal(0, 0.1), class = "b", coef = "age_std:doe_std"),
+    
 )
 
 model_fit_4 <- brm(
@@ -32,10 +35,12 @@ model_fit_4 <- brm(
         family = cratio(link = "logit") # cumulative, continuation ratio
     ), 
     data = df,
-    prior = model_prior,
+    prior = model_prior[1:8, ],
     sample_prior = "yes", # for faster computation of Bayes Factors and LOO
     iter = 4000,
     chains = 2,
+    cores = 4,
+    threads = threading(4, grainsize = 100),
     init = 0, # where to initialise MCMCs
     seed = 888, # for reproducibility
     backend = "cmdstanr", # for faster, less problematic compilation in C++
@@ -47,6 +52,41 @@ model_fit_4 <- brm(
     ),
     save_model = here("stan", "fit_4.stan") # save Stan code
 )
+
+
+job(
+    import = c("model_prior", "df"),
+    packages = c("brms", "here", "job"),
+    title = "model_fit_5",
+    model_fit_5 = {
+        model_fit_5 <- brm(
+            formula = bf(
+                response ~ age_std + freq_std + n_phon_std + doe_std + age_std:doe_std +
+                    (1 + age_std + freq_std + n_phon_std + doe_std + age_std:doe_std | id) + 
+                    (1 + age_std + freq_std + n_phon_std + doe_std + age_std:doe_std | te) ,
+                family = cratio(link = "logit") # cumulative, continuation ratio
+            ), 
+            data = df,
+            prior = model_prior,
+            sample_prior = "yes", # for faster computation of Bayes Factors and LOO
+            iter = 1000,
+            chains = 8,
+            cores = 8,
+            init = 0, # where to initialise MCMCs
+            seed = 888, # for reproducibility
+            backend = "cmdstanr", # for faster, less problematic compilation in C++
+            file = here("results", "fit_5.rds"), # save model as file
+            # file_refit = "always", # should model be refitted or loaded from file?
+            control = list(
+                adapt_delta = 0.9, # for better convergence of MCMCs
+                max_treedepth = 15
+            ),
+            save_model = here("stan", "fit_5.stan") # save Stan code
+        )
+        export(c(model_fit_5))
+    }
+)
+
 
 
 model_fit_4_prior <- brm(
@@ -184,10 +224,10 @@ df_preds <- expand_grid(
 ) 
 
 # expected posterior predictions 
-preds <- add_epred_draws(
+preds_age <- add_epred_draws(
     newdata = df_preds, 
     object = model_fit_4,
-    ndraws = NULL,
+    ndraws = 25,
     re_formula = NA
 ) %>% 
     pivot_wider(
@@ -214,7 +254,13 @@ preds <- add_epred_draws(
         age = rescale_variable(age_std, mean = mean(df$age), sd = sd(df$age))
     ) 
 
-write_ipc_stream(preds, here("results", "posterior_predictions-population.parquet"))
+write_ipc_stream(preds_age, here("results", "posterior_predictions-population.parquet"))
+
+# empirical response cumulative probabilities
+aoas <- get_aoa(preds_age, .category, doe_std) %>% 
+    mutate(doe_std = paste0(doe_std, " SD")) 
+
+write_ipc_stream(aoas, here("results", "posterior_aoas-population.parquet"))
 
 
 # predictions by frequency ----

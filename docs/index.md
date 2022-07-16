@@ -31,7 +31,7 @@ El objetivo de este estudio es estimar la edad de adquisición de palabras en ca
 * Uno de los hitos más importantes en el desarrollo de un bebé es el aprendizaje de palabras.
 * La adquisición del lenguaje comienza muy temprano, incluso dentro del útero. Antes de que un bebé comience a aprender palabras, ya ha completado con éxito muchas tareas evolutivas relativas a su familiarización con las lenguas que escuchan.
 * Existe debate sobre qué es una palabra y sobre qué significa aprenderla, pero en el contexto de este estudio lo definiremos como una asociación estable, sensible y específica entre un conjunto de fonemas y un evento u objeto.
-* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
+* Antes se pensaba que los bebés aprendían sus primeras palabras alrededor de los 12 meses [@fenson1994variability], pero más recientemente se ha encontrado evidencia experimental relativamente robusta de que a los 6 meses los bebés ya orientan su mirada durante más tiempo hacia objetos nombrados que hacia otros objetos.
 * Aun así, el tamaño del vocabulario de un bebé es muy reducido hasta los 15 meses, cuando la gran mayoría conocen poco menos de 15 palabras
 * A los 18 meses, los bebés comienzan a adquirir palabras a un ritmo mucho mayor: a los 24 meses ya conocen cerca de 400 palabras. A partir de los 30 meses (2.5 años) el ritmo de adquisición de palabras crece a un ritmo más estable hasta la adultez.
 
@@ -52,7 +52,7 @@ El objetivo de este estudio es estimar la edad de adquisición de palabras en ca
 
 ## Cuestionario
 
-**MultiLex** es un cuestionario inspirado en el *McArthur-Bates Communicative Development Inventory* [CDI, @fenson1994variability] en el que presentamos una lista de palabras a las personas a cargo de cada participante. Les pedimos que, para cada palabra, respondan si creen que el participante *No comprende ni dice* la palabra, *Comprende* la palabra o *Comprende y dice* la palabra. Las palabras incluidas son palabras que normalmente aprenden los niños en las edades de interés, aunque varían en su frecuencia léxica (el número de veces que aparecen en el habla natural) y por tanto también en su dificultad. Estas palabras pertenecen a diversas categorías conceptuales/funcionales, como *Comida* o *Adverbios*. Para los análisis de este estudio seleccionamos únicamente palabras de contenido (sustantivos, verbos y adjetivos).
+**MultiLex** es un cuestionario inspirado en el *McArthur-Bates Communicative Development Inventory* [CDI, @fenson1994variabilityvariability] en el que presentamos una lista de palabras a las personas a cargo de cada participante. Les pedimos que, para cada palabra, respondan si creen que el participante *No comprende ni dice* la palabra, *Comprende* la palabra o *Comprende y dice* la palabra. Las palabras incluidas son palabras que normalmente aprenden los niños en las edades de interés, aunque varían en su frecuencia léxica (el número de veces que aparecen en el habla natural) y por tanto también en su dificultad. Estas palabras pertenecen a diversas categorías conceptuales/funcionales, como *Comida* o *Adverbios*. Para los análisis de este estudio seleccionamos únicamente palabras de contenido (sustantivos, verbos y adjetivos).
 
 Las familias rellenaron una de las cuatro versiones del cuestionario. Cada version contiene una selección de ~600 palabras diferentes (300 en catalán, 300 en castellano), a excepción de algunas palabras que se repiten a través de las versiones. Las palabras incluidas en castellano son traducciones equivalentes de las palabras en catalán. Más detalles sobre el cuestionario en el repositorio de [multilex](https://github.com/gongcastro/multilex).
 
@@ -893,75 +893,22 @@ Hemos ejecutado el modelo especificando los siguientes ajustes:
 
 ### Distribución previa {.tab-pills}
 
+Hemos especificado una distribución previa informativa de acuerdo con estimaciones previas de adquisición de palabras medida con el CDI en múltiples lenguas. Se consultaron estas estimaciones en la plataforma [Wordbank](https://mikabr.io/aoa-prediction/aoa_estimation.html). A través de múltiples lenguas, la mayoría de palabras incluidas en la adaptación correspondiente del CDI se  comprenden alrededor de los 16.9498686 meses y se producen alrededor de los 20.8928264 meses. Hemos ajustado estas estimaciones a la población mayoritariamente bilingüe de nuestra muestra, para quienes existe evidence de una edad de adquisición de palabras ligeramente más tardía.
+
+![](index_files/figure-html/wordbank-aoa-1.png)<!-- -->
+
 #### Tabla
 
 
 ```r
-model_fit_4$prior
-```
-
-```
-##                 prior     class       coef group resp dpar nlpar bound
-##                (flat)         b                                       
-##        normal(1, 0.1)         b    age_std                            
-##        normal(0, 0.1)         b    doe_std                            
-##        normal(0, 0.1)         b   freq_std                            
-##        normal(0, 0.1)         b n_phon_std                            
-##    normal(-0.25, 0.1) Intercept                                       
-##    normal(-0.25, 0.1) Intercept          1                            
-##    normal(-0.25, 0.1) Intercept          2                            
-##  lkj_corr_cholesky(2)         L                                       
-##  lkj_corr_cholesky(2)         L               id                      
-##  lkj_corr_cholesky(2)         L               te                      
-##  student_t(3, 0, 2.5)        sd                                       
-##        normal(1, 0.1)        sd               id                      
-##        normal(1, 0.1)        sd    age_std    id                      
-##        normal(1, 0.1)        sd    doe_std    id                      
-##        normal(1, 0.1)        sd   freq_std    id                      
-##        normal(1, 0.1)        sd  Intercept    id                      
-##        normal(1, 0.1)        sd n_phon_std    id                      
-##        normal(1, 0.1)        sd               te                      
-##        normal(1, 0.1)        sd    age_std    te                      
-##        normal(1, 0.1)        sd    doe_std    te                      
-##        normal(1, 0.1)        sd   freq_std    te                      
-##        normal(1, 0.1)        sd  Intercept    te                      
-##        normal(1, 0.1)        sd n_phon_std    te                      
-##        source
-##       default
-##          user
-##          user
-##          user
-##          user
-##          user
-##  (vectorized)
-##  (vectorized)
-##          user
-##  (vectorized)
-##  (vectorized)
-##       default
-##          user
-##  (vectorized)
-##  (vectorized)
-##  (vectorized)
-##  (vectorized)
-##  (vectorized)
-##          user
-##  (vectorized)
-##  (vectorized)
-##  (vectorized)
-##  (vectorized)
-##  (vectorized)
-```
-
-```r
 tribble(
     ~class, ~group, ~coef_name, ~coef, ~prior,
-    "Regression coefficients: Intercepts (\u03b20)", NA, "Intercept[1] (Comprehension)", "b_Intercept[1]", "N(-0.25, 0.1)",
-    "Regression coefficients: Intercepts (\u03b20)", NA,"Intercept[2] (Production)", "b_Intercept[2]", "N(-0.25, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Age (+1 SD)", "b_age_std", "N(1, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 Frequency (+1 SD)", "b_freq_std", "N(0, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "\u03b2 # Phonemes (+1 SD)", "b_n_phon_std", "N(0, 0.1)",
-    "Regression coefficients: predictors (\u03b21-9)", NA, "Exposure (+1 SD)", "b_doe_std", "N(0, 0.1)",
+    "Regression coefficients: Intercepts (\u03b20)", "Population", "Intercept[1] (Comprehension)", "b_Intercept[1]", "N(-0.25, 0.1)",
+    "Regression coefficients: Intercepts (\u03b20)", "Population","Intercept[2] (Production)", "b_Intercept[2]", "N(-0.25, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "\u03b2 Age (+1 SD)", "b_age_std", "N(1, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "\u03b2 Frequency (+1 SD)", "b_freq_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "\u03b2 # Phonemes (+1 SD)", "b_n_phon_std", "N(0, 0.1)",
+    "Regression coefficients: predictors (\u03b21-9)", "Population", "Exposure (+1 SD)", "b_doe_std", "N(0, 0.1)",
     "Standard deviations (\u03c3)", "TE", "\u03c3 Intercept", "sd_te__Intercept", "N(1, 0.1)",
     "Standard deviations (\u03c3)", "TE", "Age (+1 SD)", "sd_te__Intercept", "N(1, 0.1)",
     "Standard deviations (\u03c3)", "TE", "Frequency (+1 SD)", "sd_te__freq_std", "N(1, 0.1)",
@@ -996,12 +943,12 @@ tribble(
 ```
 
 ```{=html}
-<div id="vydkcohmjb" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<div id="rgdbgiasmu" style="overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
 <style>html {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#vydkcohmjb .gt_table {
+#rgdbgiasmu .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -1026,7 +973,7 @@ tribble(
   border-left-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_heading {
+#rgdbgiasmu .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -1038,7 +985,7 @@ tribble(
   border-right-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_title {
+#rgdbgiasmu .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -1050,7 +997,7 @@ tribble(
   border-bottom-width: 0;
 }
 
-#vydkcohmjb .gt_subtitle {
+#rgdbgiasmu .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -1062,13 +1009,13 @@ tribble(
   border-top-width: 0;
 }
 
-#vydkcohmjb .gt_bottom_border {
+#rgdbgiasmu .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_col_headings {
+#rgdbgiasmu .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1083,7 +1030,7 @@ tribble(
   border-right-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_col_heading {
+#rgdbgiasmu .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1103,7 +1050,7 @@ tribble(
   overflow-x: hidden;
 }
 
-#vydkcohmjb .gt_column_spanner_outer {
+#rgdbgiasmu .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1115,15 +1062,15 @@ tribble(
   padding-right: 4px;
 }
 
-#vydkcohmjb .gt_column_spanner_outer:first-child {
+#rgdbgiasmu .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#vydkcohmjb .gt_column_spanner_outer:last-child {
+#rgdbgiasmu .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#vydkcohmjb .gt_column_spanner {
+#rgdbgiasmu .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -1135,7 +1082,7 @@ tribble(
   width: 100%;
 }
 
-#vydkcohmjb .gt_group_heading {
+#rgdbgiasmu .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1160,7 +1107,7 @@ tribble(
   vertical-align: middle;
 }
 
-#vydkcohmjb .gt_empty_group_heading {
+#rgdbgiasmu .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -1175,15 +1122,15 @@ tribble(
   vertical-align: middle;
 }
 
-#vydkcohmjb .gt_from_md > :first-child {
+#rgdbgiasmu .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#vydkcohmjb .gt_from_md > :last-child {
+#rgdbgiasmu .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#vydkcohmjb .gt_row {
+#rgdbgiasmu .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1202,7 +1149,7 @@ tribble(
   overflow-x: hidden;
 }
 
-#vydkcohmjb .gt_stub {
+#rgdbgiasmu .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1215,7 +1162,7 @@ tribble(
   padding-right: 5px;
 }
 
-#vydkcohmjb .gt_stub_row_group {
+#rgdbgiasmu .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -1229,11 +1176,11 @@ tribble(
   vertical-align: top;
 }
 
-#vydkcohmjb .gt_row_group_first td {
+#rgdbgiasmu .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#vydkcohmjb .gt_summary_row {
+#rgdbgiasmu .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1243,16 +1190,16 @@ tribble(
   padding-right: 5px;
 }
 
-#vydkcohmjb .gt_first_summary_row {
+#rgdbgiasmu .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_first_summary_row.thick {
+#rgdbgiasmu .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#vydkcohmjb .gt_last_summary_row {
+#rgdbgiasmu .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1262,7 +1209,7 @@ tribble(
   border-bottom-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_grand_summary_row {
+#rgdbgiasmu .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -1272,7 +1219,7 @@ tribble(
   padding-right: 5px;
 }
 
-#vydkcohmjb .gt_first_grand_summary_row {
+#rgdbgiasmu .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -1282,11 +1229,11 @@ tribble(
   border-top-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_striped {
+#rgdbgiasmu .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#vydkcohmjb .gt_table_body {
+#rgdbgiasmu .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -1295,7 +1242,7 @@ tribble(
   border-bottom-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_footnotes {
+#rgdbgiasmu .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1309,7 +1256,7 @@ tribble(
   border-right-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_footnote {
+#rgdbgiasmu .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-left: 4px;
@@ -1318,7 +1265,7 @@ tribble(
   padding-right: 5px;
 }
 
-#vydkcohmjb .gt_sourcenotes {
+#rgdbgiasmu .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -1332,7 +1279,7 @@ tribble(
   border-right-color: #D3D3D3;
 }
 
-#vydkcohmjb .gt_sourcenote {
+#rgdbgiasmu .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -1340,36 +1287,36 @@ tribble(
   padding-right: 5px;
 }
 
-#vydkcohmjb .gt_left {
+#rgdbgiasmu .gt_left {
   text-align: left;
 }
 
-#vydkcohmjb .gt_center {
+#rgdbgiasmu .gt_center {
   text-align: center;
 }
 
-#vydkcohmjb .gt_right {
+#rgdbgiasmu .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#vydkcohmjb .gt_font_normal {
+#rgdbgiasmu .gt_font_normal {
   font-weight: normal;
 }
 
-#vydkcohmjb .gt_font_bold {
+#rgdbgiasmu .gt_font_bold {
   font-weight: bold;
 }
 
-#vydkcohmjb .gt_font_italic {
+#rgdbgiasmu .gt_font_italic {
   font-style: italic;
 }
 
-#vydkcohmjb .gt_super {
+#rgdbgiasmu .gt_super {
   font-size: 65%;
 }
 
-#vydkcohmjb .gt_two_val_uncert {
+#rgdbgiasmu .gt_two_val_uncert {
   display: inline-block;
   line-height: 1em;
   text-align: right;
@@ -1378,31 +1325,31 @@ tribble(
   margin-left: 0.1em;
 }
 
-#vydkcohmjb .gt_footnote_marks {
+#rgdbgiasmu .gt_footnote_marks {
   font-style: italic;
   font-weight: normal;
   font-size: 75%;
   vertical-align: 0.4em;
 }
 
-#vydkcohmjb .gt_asterisk {
+#rgdbgiasmu .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#vydkcohmjb .gt_slash_mark {
+#rgdbgiasmu .gt_slash_mark {
   font-size: 0.7em;
   line-height: 0.7em;
   vertical-align: 0.15em;
 }
 
-#vydkcohmjb .gt_fraction_numerator {
+#rgdbgiasmu .gt_fraction_numerator {
   font-size: 0.6em;
   line-height: 0.6em;
   vertical-align: 0.45em;
 }
 
-#vydkcohmjb .gt_fraction_denominator {
+#rgdbgiasmu .gt_fraction_denominator {
   font-size: 0.6em;
   line-height: 0.6em;
   vertical-align: -0.05em;
@@ -1424,7 +1371,7 @@ tribble(
   </thead>
   <tbody class="gt_table_body">
     <tr class="gt_group_heading_row">
-      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Regression coefficients: Intercepts (β0) - NA</td>
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Regression coefficients: Intercepts (β0) - Population</td>
     </tr>
     <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">Intercept[1] (Comprehension)</td>
 <td class="gt_row gt_left" style="text-align: left;">b_Intercept[1]</td>
@@ -1433,7 +1380,7 @@ tribble(
 <td class="gt_row gt_left" style="text-align: left;">b_Intercept[2]</td>
 <td class="gt_row gt_left" style="text-align: left;">N(-0.25, 0.1)</td></tr>
     <tr class="gt_group_heading_row">
-      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Regression coefficients: predictors (β1-9) - NA</td>
+      <td colspan="3" class="gt_group_heading" style="background-color: #BEBEBE;">Regression coefficients: predictors (β1-9) - Population</td>
     </tr>
     <tr class="gt_row_group_first"><td class="gt_row gt_left" style="text-align: left;">β Age (+1 SD)</td>
 <td class="gt_row gt_left" style="text-align: left;">b_age_std</td>
@@ -1857,15 +1804,19 @@ df %>%
 preds_freq_observed <- df %>%
     left_join(select(items, te, item, ipa_flat)) %>% 
     filter(
-        te %in% items$te[items$item %in% c(
-            c(
-                "spa_casa",
-                "spa_jirafa",
-                "spa_columpiar",
-                "spa_mama"
-            )
-        )]
-    ) %>% 
+        between(age_std, -0.5, 0.5),
+        between(doe_std, -0.5, 0.5),
+        #     te %in% items$te[items$item %in% c(
+        #         c(
+        #             "spa_casa",
+        #             "spa_jirafa",
+        #             "spa_columpiar",
+        #             "spa_silla",
+        #             "spa_vaca",
+        #             ""
+        #         )
+        #     )]
+    ) %>%
     group_by(te, item, ipa_flat, freq) %>% 
     summarise(
         yes_Production = sum(response=="Understands and Says"),
@@ -1908,41 +1859,42 @@ preds_freq %>%
         geom = "line",
         size = 1
     ) +
-    geom_line(
-        data = preds_freq_observed,
-        aes(
-            y = prop,
-            group = te
-        ),
-        size = 1,
-        colour = "grey"
-    ) +
-    geom_label_repel(
-        data = preds_freq_observed %>% 
-            group_by(.category, te, item, ipa_flat, freq) %>% 
-            summarise(
-                prop = max(prop),
-                .groups = "drop"
-            ),
-        box.padding = 1,
-        min.segment.length = 10,
-        aes(
-            y = prop, 
-            label = paste0("/", ipa_flat, "/")
-        ),
-        size = 5,
-        alpha = 0.65,
-        label.size = 0,
-        label.r = 0,
-        fill = "white"
-    ) +
-    geom_point(
-        data = preds_freq_observed,
-        aes(
-            y = prop, 
-        ),
-        size = 2
-    ) +
+    # geom_line(
+    #     data = preds_freq_observed,
+    #     aes(
+    #         y = prop,
+    #         group = te
+    #     ),
+    #     size = 1,
+    #     colour = "grey"
+    # ) +
+    # geom_label_repel(
+    #     data = preds_freq_observed %>% 
+#         group_by(.category, te, item, ipa_flat, freq) %>% 
+#         summarise(
+#             prop = max(prop),
+#             .groups = "drop"
+#         ),
+#     box.padding = 1,
+#     min.segment.length = 10,
+#     aes(
+#         y = prop, 
+#         label = paste0("/", ipa_flat, "/")
+#     ),
+#     size = 5,
+#     alpha = 0.65,
+#     label.size = 0,
+#     label.r = 0,
+#     fill = "white"
+# ) +
+geom_point(
+    data = preds_freq_observed,
+    aes(
+        y = prop, 
+    ),
+    size = 2,
+    alpha = 0.1
+) +
     labs(
         x = "Frequency (Zipf score)",
         y = "P(acquisition | frequency)",
@@ -1970,6 +1922,8 @@ preds_freq %>%
 preds_n_phon_observed <- df %>%
     left_join(select(items, te, item, ipa_flat)) %>% 
     filter(
+        between(age_std, 0, 0.1),
+        between(doe_std, -0.5, 0.5),
         te %in% items$te[items$item %in% c(
             c(
                 "spa_chapotear",
@@ -2031,15 +1985,16 @@ preds_n_phon %>%
         colour = "grey"
     ) +
     geom_label_repel(
-        data = preds_n_phon_observed %>% 
-            group_by(.category, te, item, ipa_flat, n_phon) %>% 
+        data = preds_n_phon_observed %>%
+            group_by(.category, te, item, ipa_flat, n_phon) %>%
             summarise(
                 prop = max(prop),
                 .groups = "drop"
             ),
-        box.padding = 1, min.segment.length = 10,
+        box.padding = 0.2, 
+        min.segment.length = 10,
         aes(
-            y = prop, 
+            y = prop,
             label = paste0("/", ipa_flat, "/")
         ),
         size = 5,
