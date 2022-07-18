@@ -1,7 +1,8 @@
 
 # custom ggplot theme ----
 theme_custom <- function(){
-    theme_minimal() +
+
+    theme_minimal(base_family = "Jost") +
         theme(
             panel.grid = element_line(
                 colour = "grey",
@@ -14,17 +15,28 @@ theme_custom <- function(){
             ),
             axis.text = element_text(
                 colour = "black",
-                size = 10
+                size = 12
             ),
             axis.title = element_text(
-                size = 12
+                size = 15,
+                family = "Jost"
+                
             ),
             plot.background = element_rect(
                 fill = "white",
                 colour = NA
             ),
-            plot.title = element_text(size = 14, face = "bold"),
-            strip.text = element_text(size = 12)
+            plot.title = element_text(
+                size = 17, 
+                face = "bold",
+                family = "Jost"
+            ),
+            strip.text = element_text(size = 15),
+            text = element_text(
+                size = 13
+            ),
+            legend.text = element_text(size = 13),
+            legend.title = element_text(size = 14)
         )
 }
 

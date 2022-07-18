@@ -1,6 +1,7 @@
 library(dplyr)
 library(arrow)
 library(brms)
+library(tidyr)
 library(tidybayes)
 library(ggplot2)
 library(bayesplot)
@@ -13,6 +14,8 @@ library(job)
 
 df <- read_ipc_stream(here("data", "main.parquet"))
 
+source(here("R", "utils.R"))
+
 # model prior
 model_prior <- c(
     prior(normal(-0.25, 0.1), class = "Intercept"),
@@ -22,8 +25,7 @@ model_prior <- c(
     prior(normal(1, 0.1), class = "b", coef = "age_std"),
     prior(normal(0, 0.1), class = "b", coef = "freq_std"),
     prior(normal(0, 0.1), class = "b", coef = "n_phon_std"),
-    prior(normal(0, 0.1), class = "b", coef = "doe_std"),
-    prior(normal(0, 0.1), class = "b", coef = "age_std:doe_std"),
+    prior(normal(0, 0.1), class = "b", coef = "doe_std")
     
 )
 
@@ -51,40 +53,6 @@ model_fit_4 <- brm(
         max_treedepth = 15
     ),
     save_model = here("stan", "fit_4.stan") # save Stan code
-)
-
-
-job(
-    import = c("model_prior", "df"),
-    packages = c("brms", "here", "job"),
-    title = "model_fit_5",
-    model_fit_5 = {
-        model_fit_5 <- brm(
-            formula = bf(
-                response ~ age_std + freq_std + n_phon_std + doe_std + age_std:doe_std +
-                    (1 + age_std + freq_std + n_phon_std + doe_std + age_std:doe_std | id) + 
-                    (1 + age_std + freq_std + n_phon_std + doe_std + age_std:doe_std | te) ,
-                family = cratio(link = "logit") # cumulative, continuation ratio
-            ), 
-            data = df,
-            prior = model_prior,
-            sample_prior = "yes", # for faster computation of Bayes Factors and LOO
-            iter = 1000,
-            chains = 8,
-            cores = 8,
-            init = 0, # where to initialise MCMCs
-            seed = 888, # for reproducibility
-            backend = "cmdstanr", # for faster, less problematic compilation in C++
-            file = here("results", "fit_5.rds"), # save model as file
-            # file_refit = "always", # should model be refitted or loaded from file?
-            control = list(
-                adapt_delta = 0.9, # for better convergence of MCMCs
-                max_treedepth = 15
-            ),
-            save_model = here("stan", "fit_5.stan") # save Stan code
-        )
-        export(c(model_fit_5))
-    }
 )
 
 
@@ -227,7 +195,7 @@ df_preds <- expand_grid(
 preds_age <- add_epred_draws(
     newdata = df_preds, 
     object = model_fit_4,
-    ndraws = 25,
+    ndraws = 50,
     re_formula = NA
 ) %>% 
     pivot_wider(
@@ -279,9 +247,7 @@ preds_freq <- get_posterior_predictions(
         )
     ) 
 
-
 write_ipc_stream(preds_freq, here("results", "posterior_predictions-frequency.parquet"))
-
 
 # predictions by n_phon ----
 preds_n_phon <- get_posterior_predictions(
@@ -298,7 +264,6 @@ preds_n_phon <- get_posterior_predictions(
             sd = sd(df$n_phon)
         )
     )
-
 
 write_ipc_stream(preds_n_phon, here("results", "posterior_predictions-n_phon.parquet"))
 
@@ -319,4 +284,69 @@ preds_n_doe <- get_posterior_predictions(
     )
 
 write_ipc_stream(preds_n_doe, here("results", "posterior_predictions-doe.parquet"))
+
+
+# expected posterior predictions by (te)
+
+items_interest  <- c(
+    "spa_casa", 
+    "spa_gato", 
+    "cat_casa", 
+    "cat_gat",
+    "spa_cocodrilo",
+    "cat_cocodrilo",
+    "spa_mano",
+    "cat_ma2"
+    ) 
+
+df_preds_te <- expand_grid(
+    age_std = seq(-4, 4, 0.1),
+    doe_std = c(-1, 0, 1),
+    te = unique(df$te[df$item %in% items_interest])
+) %>% 
+    left_join(
+        distinct(df, te, item, freq_std, n_phon_std) %>% 
+            filter(te %in%  df$te[df$item %in% items_interest]
+            )
+    )
+
+preds_age_te <- add_epred_draws(
+    newdata = df_preds_te, 
+    object = model_fit_4,
+    ndraws = 25,
+    re_formula = ~ 1 | te
+) %>% 
+    pivot_wider(
+        names_from = .category,
+        values_from = .epred
+    ) %>% 
+    mutate(
+        Understands = Understands + `Understands and Says`
+    ) %>% 
+    pivot_longer(
+        c(No, Understands, `Understands and Says`),
+        names_to = ".category",
+        values_to = ".epred"
+    ) %>% 
+    # get curves of interest
+    filter(.category %in% c("Understands", "Understands and Says")) %>% 
+    # more informative labels
+    mutate(
+        .category = case_when(
+            .category=="Understands" ~ "Comprehension",
+            .category=="Understands and Says" ~ "Production"
+        ),
+        # see R/utils.R
+        age = rescale_variable(age_std, mean = mean(df$age), sd = sd(df$age))
+    ) %>% 
+    left_join(
+        distinct(df, te, item, n_phon, freq) %>% 
+            filter(te %in%  df$te[df$item %in% items_interest]
+            )
+    )
+
+
+
+
+write_ipc_stream(preds_age_te, here("results", "posterior_predictions-groups.parquet"))
 

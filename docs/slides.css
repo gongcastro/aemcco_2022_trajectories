@@ -1,0 +1,26 @@
+@import url(https://fonts.googleapis.com/css?family=Jost);
+
+.my-logo-left {
+    content: "";
+    position: absolute;
+    bottom: 15px;
+    left:   20px;
+    height: 120px;
+    width: 360;
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-image: url(https://upload.wikimedia.org/wikipedia/commons/5/53/Logo_UPF.jpg);
+}
+
+
+
+.title-slide {
+  background-size: cover;
+  background-color: "white";
+  color: "#FF7F0E";
+  font-size: 25px;
+}
+
+.orange {
+    color: "#FF7F0E";
+}
