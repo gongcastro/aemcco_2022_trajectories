@@ -45,7 +45,6 @@ library(brms)
 library(gt)
 library(scales)
 library(ggrepel)
-library(stringr)
 library(multilex)
 library(tidytext)
 library(papaja)
@@ -148,8 +147,8 @@ class:
 * Cumplimentado por una o dos personas a cargo del bebé
 * Adaptado a múltiples lenguas: [Wordbank](http://wordbank.stanford.edu/) (http://wordbank.stanford.edu/)
 * Inventario de palabras: ~400 ítems
-- No / Comprende (10-16 meses)
-- No / Produce (17-32 meses)
+        - No / Comprende (10-16 meses)
+        - No / Produce (17-32 meses)
 * Tamaño de vocabulario: suma del número de respuestas *Comprende* o *Produce*
 * Ej.: 215 palabras, 53.75% comprende, pct 0.78
 ]
@@ -164,7 +163,7 @@ class:
 * Paquete de R: {[**multilex**](https://gongcastro.github.io/multilex/)} [[GitHub](https://github.com/gongcastro/multilex)]
 
 .center[
-<img src="../img/multilex.png" alt="multilex" width="100px"/>
+<img src="../img/multilex.png" alt="multilex" width="150px"/>
 ]
 ]
 
@@ -1256,7 +1255,7 @@ plot_preds_doe <- preds_doe %>%
 ---
 class:
 
-```{r post-preds-item-casa, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r post-preds-item-casa, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000, fig.height="70%", fig.width="80%"}
 
 
 aoas_te <- get_aoa(preds_age_te, .category, doe_std, te, item, freq, n_phon) %>% 
@@ -1685,7 +1684,7 @@ rhats %>%
 
 # Anexo 3: tamaño de muestra efectivo
 
-```{r diagnostics-neffs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000, out.width="90%", out.height="80%", fig.height=4, fig.width=10}
+```{r diagnostics-neffs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000, out.width="90%", out.height="80%", fig.height=4, fig.width=10, eval=FALSE}
 neffs %>% 
     ggplot() +
     aes(
@@ -1718,7 +1717,7 @@ neffs %>%
 
 # Anexo 4: Variabilidad de coeficientes
 
-```{r rand-coefs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000, out.width="90%", fig.height=4.5, fig.width=10}
+```{r rand-coefs, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, dpi=1000, out.width="90%", fig.height=4.5, fig.width=10, eval=FALSE}
 
 rand_coefs %>% 
     ggplot() +
@@ -1754,13 +1753,15 @@ rand_coefs %>%
 ---
 class:
 
+# ¡Gracias!
 
-```{r agradecimientos, echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE, out.height="100%", out.width="100%", dpi=3000}
+.pull-right[
+![](../img/babylab.png)
+]
 
-knitr::include_graphics("../img/agradecimientos.jpg")
-
-
-```
+.pull-left[
+![](../img/gentechula.jpg)
+]
 
 
 

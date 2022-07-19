@@ -2,7 +2,7 @@
 # custom ggplot theme ----
 theme_custom <- function(){
 
-    theme_minimal(base_family = "Jost") +
+    theme_minimal(base_family = "Arial") +
         theme(
             panel.grid = element_line(
                 colour = "grey",
